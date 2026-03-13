@@ -1,6 +1,6 @@
 {
   "name": "@drizzle-graphql-suite/schema",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "type": "module",
   "description": "GraphQL schema builder with CRUD operations, relation filtering, and hooks from Drizzle ORM",
   "license": "MIT",
