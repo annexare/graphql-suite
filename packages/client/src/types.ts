@@ -65,15 +65,17 @@ type InferScalars<TEntity extends EntityDef, TSelect> = Pick<
 >
 
 type InferRelations<TDefs extends AnyEntityDefs, TEntity extends EntityDef, TSelect> = {
+  // Note: one-to-one relations are always typed as nullable because Drizzle's
+  // One<_, TIsNullable> flag only reflects FK column nullability, not whether a
+  // matching row exists. Reverse relations (where the FK is on the other table)
+  // can have notNull FK columns yet still have no matching row.
   [K in keyof TSelect & keyof TEntity['relations'] as TSelect[K] extends Record<string, unknown>
     ? K
     : never]: TEntity['relations'][K] extends RelationDef
     ? TEntity['relations'][K]['entity'] extends keyof TDefs
       ? TEntity['relations'][K]['type'] extends 'many'
         ? InferResult<TDefs, TDefs[TEntity['relations'][K]['entity']], TSelect[K]>[]
-        : TEntity['relations'][K]['required'] extends true
-          ? InferResult<TDefs, TDefs[TEntity['relations'][K]['entity']], TSelect[K]>
-          : InferResult<TDefs, TDefs[TEntity['relations'][K]['entity']], TSelect[K]> | null
+        : InferResult<TDefs, TDefs[TEntity['relations'][K]['entity']], TSelect[K]> | null
       : never
     : never
 }
