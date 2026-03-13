@@ -215,8 +215,10 @@ export type BuildSchemaConfig = {
    * Per-table lifecycle hooks for queries and mutations.
    * Keys are table names as they appear in the Drizzle schema object.
    *
-   * Hooks run server-side only and are not included in the shared config
-   * object — define them separately when building the schema.
+   * **Server-only** — hooks are executed during GraphQL resolution and have
+   * no effect on the client package. The client imports `BuildSchemaConfig`
+   * for type-level inference only (`limitRelationDepth`, `tables`, etc.)
+   * and ignores `hooks` entirely.
    *
    * @example
    * ```ts
@@ -258,6 +260,11 @@ export type BuildSchemaConfig = {
   /**
    * Fine-grained per-relation pruning rules that control how each
    * relation expands in the generated schema.
+   *
+   * **Server-only** — pruning shapes the generated GraphQL schema.
+   * The client builds queries from the schema descriptor, which already
+   * reflects pruning (pruned relations are absent), so the client
+   * cannot generate queries for pruned fields.
    *
    * Keys use `tableName.relationName` format. Values:
    * - `false` — relation field is omitted entirely from the parent type
