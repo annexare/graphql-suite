@@ -9,7 +9,17 @@ import {
   type SQL,
   type Table,
 } from 'drizzle-orm'
-import { integer, type PgDatabase, pgSchema, pgTable, text, uuid } from 'drizzle-orm/pg-core'
+import {
+  integer,
+  type PgColumn,
+  type PgDatabase,
+  type PgQueryResultHKT,
+  pgSchema,
+  pgTable,
+  text,
+  uuid,
+} from 'drizzle-orm/pg-core'
+import { GraphQLObjectType, getNamedType } from 'graphql'
 
 import { SchemaBuilder } from './schema-builder'
 
@@ -18,14 +28,20 @@ import { SchemaBuilder } from './schema-builder'
 
 class TestableSchemaBuilder extends SchemaBuilder {
   /** Column-level filter extraction */
-  // biome-ignore lint/suspicious/noExplicitAny: dynamic GraphQL filter input
-  extractColumnFilters(column: Column, columnName: string, operators: any): SQL | undefined {
+  extractColumnFilters(
+    column: Column,
+    columnName: string,
+    operators: Record<string, unknown>,
+  ): SQL | undefined {
     return super.extractColumnFilters(column, columnName, operators)
   }
 
   /** Table-level filter extraction (columns + relations + OR) */
-  // biome-ignore lint/suspicious/noExplicitAny: dynamic GraphQL filter input
-  extractTableColumnFilters(table: Table, tableName: string, filters: any): SQL | undefined {
+  extractTableColumnFilters(
+    table: Table,
+    tableName: string,
+    filters: Record<string, unknown>,
+  ): SQL | undefined {
     return super.extractTableColumnFilters(table, tableName, filters)
   }
 
@@ -40,15 +56,13 @@ class TestableSchemaBuilder extends SchemaBuilder {
   }
 
   /** Order-by extraction */
-  // biome-ignore lint/suspicious/noExplicitAny: dynamic GraphQL order input
-  extractOrderBy(table: Table, orderArgs: any): SQL[] {
+  extractOrderBy(table: Table, orderArgs: Record<string, unknown>): SQL[] {
     return super.extractOrderBy(table, orderArgs)
   }
 
-  /** Column selection from resolve tree */
+  /** Column selection from resolve tree — only `name` is read by the implementation */
   extractColumns(tree: Record<string, { name: string }>, table: Table): Record<string, true> {
-    // biome-ignore lint/suspicious/noExplicitAny: simplified resolve tree for testing
-    return super.extractColumns(tree as any, table)
+    return super.extractColumns(tree as unknown as Record<string, never>, table)
   }
 
   /** Join condition building */
@@ -70,15 +84,15 @@ class TestableSchemaBuilder extends SchemaBuilder {
 // ─── SQL Structure Helper ───────────────────────────────────
 // Renders a Drizzle SQL object into a human-readable structure string
 // for asserting the shape of generated SQL (and/or/eq/exists/not).
-// biome-ignore lint/suspicious/noExplicitAny: inspecting internal SQL chunks
-function describeSQL(s: any): string {
+function describeSQL(s: { queryChunks: unknown[] }): string {
   const parts: string[] = []
   for (const chunk of s.queryChunks) {
-    if (chunk?.value && Array.isArray(chunk.value)) {
-      const val = chunk.value.join('')
+    const c = chunk as { value?: unknown[]; queryChunks?: unknown[] } | undefined
+    if (c?.value && Array.isArray(c.value)) {
+      const val = c.value.join('')
       if (val.trim()) parts.push(val.trim())
-    } else if (chunk?.queryChunks) {
-      parts.push(`(${describeSQL(chunk)})`)
+    } else if (c?.queryChunks) {
+      parts.push(`(${describeSQL(c as { queryChunks: unknown[] })})`)
     } else {
       parts.push('[param]')
     }
@@ -151,8 +165,8 @@ const schemaQualifiedSchema = {
 
 // ─── Mock DB ────────────────────────────────────────────────
 
-// biome-ignore lint/suspicious/noExplicitAny: partial mock of PgDatabase for testing
-type MockDb = PgDatabase<any, any, any>
+/** Matches SchemaBuilder constructor's parameter type exactly */
+type MockDb = PgDatabase<PgQueryResultHKT, Record<string, unknown>>
 
 const queryFindStub = {
   findMany: () => Promise.resolve([]),
@@ -172,7 +186,7 @@ function createMockDb(
     _: { fullSchema: schema, schema: tables, tableNamesMap },
     query: queryStubs ?? {},
     select: () => ({ from: () => ({ where: () => ({}) }) }),
-  } as MockDb
+  } as unknown as MockDb
 }
 
 // ─── Test Schema (self-referencing) ─────────────────────────
@@ -180,8 +194,7 @@ function createMockDb(
 const node = pgTable('node', {
   id: uuid().primaryKey().defaultRandom(),
   name: text().notNull(),
-  // biome-ignore lint/suspicious/noExplicitAny: Drizzle circular self-reference requires any
-  parentNodeId: uuid().references((): any => node.id),
+  parentNodeId: uuid().references((): PgColumn => node.id),
 })
 
 const tag = pgTable('tag', {
@@ -267,7 +280,7 @@ describe('buildJoinCondition', () => {
     const builder = new TestableSchemaBuilder(mockDb)
 
     // Construct a fake relation object that normalizeRelation cannot resolve
-    const fakeRelation = { referencedTable: parent, fieldName: 'fake' }
+    const fakeRelation = { referencedTable: parent, fieldName: 'fake' } as unknown as Relation
 
     const result: SQL | undefined = builder.buildJoinCondition(parent, child, fakeRelation)
     expect(result).toBeUndefined()
@@ -343,13 +356,8 @@ describe('buildJoinCondition (schema-qualified tables)', () => {
 
 describe('table exclusion', () => {
   test('excluded tables are removed from the schema', () => {
-    const mockDb = createMockDb()
-    const findStub = { findMany: () => Promise.resolve([]), findFirst: () => Promise.resolve(null) }
-    // biome-ignore lint/suspicious/noExplicitAny: mock db for testing
-    ;(mockDb as any).query = { parent: findStub }
-
-    // biome-ignore lint/suspicious/noExplicitAny: mock db for testing
-    const builder = new SchemaBuilder(mockDb as any, {
+    const mockDb = createMockDb(testSchema, { parent: queryFindStub })
+    const builder = new SchemaBuilder(mockDb, {
       tables: { exclude: ['child'] },
     })
     const entities = builder.buildEntities()
@@ -361,13 +369,8 @@ describe('table exclusion', () => {
   })
 
   test('relations to excluded tables are silently skipped', () => {
-    const mockDb = createMockDb()
-    const findStub = { findMany: () => Promise.resolve([]), findFirst: () => Promise.resolve(null) }
-    // biome-ignore lint/suspicious/noExplicitAny: mock db for testing
-    ;(mockDb as any).query = { parent: findStub }
-
-    // biome-ignore lint/suspicious/noExplicitAny: mock db for testing
-    const builder = new SchemaBuilder(mockDb as any, {
+    const mockDb = createMockDb(testSchema, { parent: queryFindStub })
+    const builder = new SchemaBuilder(mockDb, {
       tables: { exclude: ['child'] },
     })
     const result = builder.build()
@@ -376,9 +379,8 @@ describe('table exclusion', () => {
     // Parent type should exist but without children relation
     const parentType = typeMap.ParentSelectItem
     expect(parentType).toBeDefined()
-    if ('getFields' in parentType) {
-      // biome-ignore lint/suspicious/noExplicitAny: accessing GraphQL type fields
-      const fields = (parentType as any).getFields()
+    if (parentType instanceof GraphQLObjectType) {
+      const fields = parentType.getFields()
       expect(fields.id).toBeDefined()
       expect(fields.name).toBeDefined()
       expect(fields.children).toBeUndefined()
@@ -388,13 +390,8 @@ describe('table exclusion', () => {
 
 describe('per-table operation control', () => {
   test('queries: false suppresses query generation', () => {
-    const mockDb = createMockDb()
-    const findStub = { findMany: () => Promise.resolve([]), findFirst: () => Promise.resolve(null) }
-    // biome-ignore lint/suspicious/noExplicitAny: mock db for testing
-    ;(mockDb as any).query = { parent: findStub, child: findStub }
-
-    // biome-ignore lint/suspicious/noExplicitAny: mock db for testing
-    const builder = new SchemaBuilder(mockDb as any, {
+    const mockDb = createMockDb(testSchema, { parent: queryFindStub, child: queryFindStub })
+    const builder = new SchemaBuilder(mockDb, {
       tables: { config: { child: { queries: false } } },
     })
     const entities = builder.buildEntities()
@@ -410,13 +407,8 @@ describe('per-table operation control', () => {
   })
 
   test('mutations: false suppresses mutation generation', () => {
-    const mockDb = createMockDb()
-    const findStub = { findMany: () => Promise.resolve([]), findFirst: () => Promise.resolve(null) }
-    // biome-ignore lint/suspicious/noExplicitAny: mock db for testing
-    ;(mockDb as any).query = { parent: findStub, child: findStub }
-
-    // biome-ignore lint/suspicious/noExplicitAny: mock db for testing
-    const builder = new SchemaBuilder(mockDb as any, {
+    const mockDb = createMockDb(testSchema, { parent: queryFindStub, child: queryFindStub })
+    const builder = new SchemaBuilder(mockDb, {
       tables: { config: { child: { mutations: false } } },
     })
     const entities = builder.buildEntities()
@@ -431,13 +423,8 @@ describe('per-table operation control', () => {
   })
 
   test('queries: false + mutations: false skips table entirely but preserves relation types', () => {
-    const mockDb = createMockDb()
-    const findStub = { findMany: () => Promise.resolve([]), findFirst: () => Promise.resolve(null) }
-    // biome-ignore lint/suspicious/noExplicitAny: mock db for testing
-    ;(mockDb as any).query = { parent: findStub }
-
-    // biome-ignore lint/suspicious/noExplicitAny: mock db for testing
-    const builder = new SchemaBuilder(mockDb as any, {
+    const mockDb = createMockDb(testSchema, { parent: queryFindStub })
+    const builder = new SchemaBuilder(mockDb, {
       tables: { config: { child: { queries: false, mutations: false } } },
     })
     const entities = builder.buildEntities()
@@ -451,30 +438,24 @@ describe('per-table operation control', () => {
     // Parent's children relation type should still exist (lazy-created)
     const parentType = typeMap.ParentSelectItem
     expect(parentType).toBeDefined()
-    if ('getFields' in parentType) {
-      // biome-ignore lint/suspicious/noExplicitAny: accessing GraphQL type fields
-      const fields = (parentType as any).getFields()
+    if (parentType instanceof GraphQLObjectType) {
+      const fields = parentType.getFields()
       expect(fields.children).toBeDefined()
     }
   })
 })
 
 describe('self-relation depth limiting', () => {
+  const selfRefStubs = { node: queryFindStub, tag: queryFindStub }
+
   test('self-referencing schema builds without error', () => {
     const mockDb = createMockDb(selfRefSchema)
-    // biome-ignore lint/suspicious/noExplicitAny: mock db for testing
-    expect(() => new SchemaBuilder(mockDb as any, { limitRelationDepth: 5 })).not.toThrow()
+    expect(() => new SchemaBuilder(mockDb, { limitRelationDepth: 5 })).not.toThrow()
   })
 
   test('limitSelfRelationDepth: 1 omits self-relation fields entirely', () => {
-    const mockDb = createMockDb(selfRefSchema)
-    const findStub = { findMany: () => Promise.resolve([]), findFirst: () => Promise.resolve(null) }
-    // biome-ignore lint/suspicious/noExplicitAny: mock db for testing
-    ;(mockDb as any).query = { node: findStub, tag: findStub }
-
-    // limitSelfRelationDepth: 1 (default) — self-relation fields omitted
-    // biome-ignore lint/suspicious/noExplicitAny: mock db for testing
-    const builder = new SchemaBuilder(mockDb as any, {
+    const mockDb = createMockDb(selfRefSchema, selfRefStubs)
+    const builder = new SchemaBuilder(mockDb, {
       limitRelationDepth: 5,
       limitSelfRelationDepth: 1,
     })
@@ -483,9 +464,8 @@ describe('self-relation depth limiting', () => {
 
     const nodeType = typeMap.NodeSelectItem
     expect(nodeType).toBeDefined()
-    if ('getFields' in nodeType) {
-      // biome-ignore lint/suspicious/noExplicitAny: accessing GraphQL type fields
-      const nodeFields = (nodeType as any).getFields()
+    if (nodeType instanceof GraphQLObjectType) {
+      const nodeFields = nodeType.getFields()
       // Self-relation fields should be omitted
       expect(nodeFields.parentNode).toBeUndefined()
       expect(nodeFields.childNodes).toBeUndefined()
@@ -495,13 +475,8 @@ describe('self-relation depth limiting', () => {
   })
 
   test('limitSelfRelationDepth: 2 expands one level of self-relations', () => {
-    const mockDb = createMockDb(selfRefSchema)
-    const findStub = { findMany: () => Promise.resolve([]), findFirst: () => Promise.resolve(null) }
-    // biome-ignore lint/suspicious/noExplicitAny: mock db for testing
-    ;(mockDb as any).query = { node: findStub, tag: findStub }
-
-    // biome-ignore lint/suspicious/noExplicitAny: mock db for testing
-    const builder = new SchemaBuilder(mockDb as any, {
+    const mockDb = createMockDb(selfRefSchema, selfRefStubs)
+    const builder = new SchemaBuilder(mockDb, {
       limitRelationDepth: 5,
       limitSelfRelationDepth: 2,
     })
@@ -510,9 +485,8 @@ describe('self-relation depth limiting', () => {
 
     const nodeType = typeMap.NodeSelectItem
     expect(nodeType).toBeDefined()
-    if ('getFields' in nodeType) {
-      // biome-ignore lint/suspicious/noExplicitAny: accessing GraphQL type fields
-      const nodeFields = (nodeType as any).getFields()
+    if (nodeType instanceof GraphQLObjectType) {
+      const nodeFields = nodeType.getFields()
       // Self-relation fields should exist at first level
       expect(nodeFields.parentNode).toBeDefined()
       expect(nodeFields.childNodes).toBeDefined()
@@ -520,9 +494,8 @@ describe('self-relation depth limiting', () => {
       expect(nodeFields.tags).toBeDefined()
 
       // Navigate into parentNode's type — self-relations should be omitted at this level
-      let parentNodeType = nodeFields.parentNode.type
-      while (parentNodeType.ofType) parentNodeType = parentNodeType.ofType
-      if ('getFields' in parentNodeType) {
+      const parentNodeType = getNamedType(nodeFields.parentNode.type)
+      if (parentNodeType instanceof GraphQLObjectType) {
         const parentNodeFields = parentNodeType.getFields()
         // Scalar fields present
         expect(parentNodeFields.id).toBeDefined()
@@ -537,13 +510,8 @@ describe('self-relation depth limiting', () => {
   })
 
   test('cross-table paths reset the self-relation counter', () => {
-    const mockDb = createMockDb(selfRefSchema)
-    const findStub = { findMany: () => Promise.resolve([]), findFirst: () => Promise.resolve(null) }
-    // biome-ignore lint/suspicious/noExplicitAny: mock db for testing
-    ;(mockDb as any).query = { node: findStub, tag: findStub }
-
-    // biome-ignore lint/suspicious/noExplicitAny: mock db for testing
-    const builder = new SchemaBuilder(mockDb as any, {
+    const mockDb = createMockDb(selfRefSchema, selfRefStubs)
+    const builder = new SchemaBuilder(mockDb, {
       limitRelationDepth: 5,
       limitSelfRelationDepth: 2,
     })
@@ -553,22 +521,19 @@ describe('self-relation depth limiting', () => {
     // Path: node → tags → node (cross-table hop resets self-depth)
     const nodeType = typeMap.NodeSelectItem
     expect(nodeType).toBeDefined()
-    if ('getFields' in nodeType) {
-      // biome-ignore lint/suspicious/noExplicitAny: accessing GraphQL type fields
-      const nodeFields = (nodeType as any).getFields()
+    if (nodeType instanceof GraphQLObjectType) {
+      const nodeFields = nodeType.getFields()
       expect(nodeFields.tags).toBeDefined()
 
       // Navigate: node → tags
-      let tagsType = nodeFields.tags.type
-      while (tagsType.ofType) tagsType = tagsType.ofType
-      if ('getFields' in tagsType) {
+      const tagsType = getNamedType(nodeFields.tags.type)
+      if (tagsType instanceof GraphQLObjectType) {
         const tagFields = tagsType.getFields()
         expect(tagFields.node).toBeDefined()
 
         // Navigate: tags → node (cross-table: self-depth resets to 0)
-        let innerNodeType = tagFields.node.type
-        while (innerNodeType.ofType) innerNodeType = innerNodeType.ofType
-        if ('getFields' in innerNodeType) {
+        const innerNodeType = getNamedType(tagFields.node.type)
+        if (innerNodeType instanceof GraphQLObjectType) {
           const innerNodeFields = innerNodeType.getFields()
           // Self-relations should be present (fresh self-depth budget)
           expect(innerNodeFields.parentNode).toBeDefined()
@@ -579,13 +544,8 @@ describe('self-relation depth limiting', () => {
   })
 
   test('type count stays reasonable with limitSelfRelationDepth: 2', () => {
-    const mockDb = createMockDb(selfRefSchema)
-    const findStub = { findMany: () => Promise.resolve([]), findFirst: () => Promise.resolve(null) }
-    // biome-ignore lint/suspicious/noExplicitAny: mock db for testing
-    ;(mockDb as any).query = { node: findStub, tag: findStub }
-
-    // biome-ignore lint/suspicious/noExplicitAny: mock db for testing
-    const builder = new SchemaBuilder(mockDb as any, {
+    const mockDb = createMockDb(selfRefSchema, selfRefStubs)
+    const builder = new SchemaBuilder(mockDb, {
       limitRelationDepth: 5,
       limitSelfRelationDepth: 2,
     })
@@ -599,12 +559,9 @@ describe('self-relation depth limiting', () => {
 
   test('invalid limitSelfRelationDepth throws', () => {
     const mockDb = createMockDb(selfRefSchema)
-    // biome-ignore lint/suspicious/noExplicitAny: mock db for testing
-    expect(() => new SchemaBuilder(mockDb as any, { limitSelfRelationDepth: 0 })).toThrow()
-    // biome-ignore lint/suspicious/noExplicitAny: mock db for testing
-    expect(() => new SchemaBuilder(mockDb as any, { limitSelfRelationDepth: -1 })).toThrow()
-    // biome-ignore lint/suspicious/noExplicitAny: mock db for testing
-    expect(() => new SchemaBuilder(mockDb as any, { limitSelfRelationDepth: 1.5 })).toThrow()
+    expect(() => new SchemaBuilder(mockDb, { limitSelfRelationDepth: 0 })).toThrow()
+    expect(() => new SchemaBuilder(mockDb, { limitSelfRelationDepth: -1 })).toThrow()
+    expect(() => new SchemaBuilder(mockDb, { limitSelfRelationDepth: 1.5 })).toThrow()
   })
 })
 
@@ -612,13 +569,8 @@ describe('self-relation depth limiting', () => {
 
 describe('pruneRelations', () => {
   function buildWithPrune(pruneRelations: Record<string, false | 'leaf' | { only: string[] }>) {
-    const mockDb = createMockDb(selfRefSchema)
-    const findStub = { findMany: () => Promise.resolve([]), findFirst: () => Promise.resolve(null) }
-    // biome-ignore lint/suspicious/noExplicitAny: mock db for testing
-    ;(mockDb as any).query = { node: findStub, tag: findStub }
-
-    // biome-ignore lint/suspicious/noExplicitAny: mock db for testing
-    const builder = new SchemaBuilder(mockDb as any, {
+    const mockDb = createMockDb(selfRefSchema, { node: queryFindStub, tag: queryFindStub })
+    const builder = new SchemaBuilder(mockDb, {
       limitRelationDepth: 5,
       limitSelfRelationDepth: 2,
       pruneRelations,
@@ -626,11 +578,13 @@ describe('pruneRelations', () => {
     return builder.build()
   }
 
-  // biome-ignore lint/suspicious/noExplicitAny: accessing GraphQL type fields
-  function getFields(typeMap: Record<string, any>, typeName: string): Record<string, any> {
+  function getFields(
+    typeMap: ReturnType<import('graphql').GraphQLSchema['getTypeMap']>,
+    typeName: string,
+  ) {
     const type = typeMap[typeName]
-    if (!type || !('getFields' in type)) return {}
-    return type.getFields()
+    if (type instanceof GraphQLObjectType) return type.getFields()
+    return {} as ReturnType<GraphQLObjectType['getFields']>
   }
 
   test('false omits relation from parent type', () => {
@@ -662,10 +616,9 @@ describe('pruneRelations', () => {
     expect(nodeFields.tags).toBeDefined()
 
     // Navigate into tags type
-    let tagsType = nodeFields.tags.type
-    while (tagsType.ofType) tagsType = tagsType.ofType
-    if ('getFields' in tagsType) {
-      const tagFields = tagsType.getFields()
+    const tagsNamedType = getNamedType(nodeFields.tags.type)
+    if (tagsNamedType instanceof GraphQLObjectType) {
+      const tagFields = tagsNamedType.getFields()
       // Scalar fields present
       expect(tagFields.id).toBeDefined()
       expect(tagFields.label).toBeDefined()
@@ -682,10 +635,9 @@ describe('pruneRelations', () => {
     expect(tagFields.node).toBeDefined()
 
     // Navigate into tag's node relation type
-    let nodeType = tagFields.node.type
-    while (nodeType.ofType) nodeType = nodeType.ofType
-    if ('getFields' in nodeType) {
-      const innerNodeFields = nodeType.getFields()
+    const nodeNamedType = getNamedType(tagFields.node.type)
+    if (nodeNamedType instanceof GraphQLObjectType) {
+      const innerNodeFields = nodeNamedType.getFields()
       // Scalars always present
       expect(innerNodeFields.id).toBeDefined()
       expect(innerNodeFields.name).toBeDefined()
@@ -710,9 +662,8 @@ describe('pruneRelations', () => {
 
     // tag's node should be leaf (scalars only)
     const tagFields = getFields(typeMap, 'TagSelectItem')
-    let tagNodeType = tagFields.node.type
-    while (tagNodeType.ofType) tagNodeType = tagNodeType.ofType
-    if ('getFields' in tagNodeType) {
+    const tagNodeType = getNamedType(tagFields.node.type)
+    if (tagNodeType instanceof GraphQLObjectType) {
       const innerFields = tagNodeType.getFields()
       expect(innerFields.id).toBeDefined()
       expect(innerFields.tags).toBeUndefined()
@@ -725,33 +676,29 @@ describe('pruneRelations', () => {
 
 describe('constructor error paths', () => {
   test('missing schema throws', () => {
-    const badDb = { _: { fullSchema: undefined } }
-    // biome-ignore lint/suspicious/noExplicitAny: mock db for testing
-    expect(() => new SchemaBuilder(badDb as any)).toThrow('Schema not found')
+    const badDb = { _: { fullSchema: undefined } } as unknown as MockDb
+    expect(() => new SchemaBuilder(badDb)).toThrow('Schema not found')
   })
 
   test('negative limitRelationDepth throws', () => {
     const mockDb = createMockDb()
-    // biome-ignore lint/suspicious/noExplicitAny: mock db for testing
-    expect(() => new SchemaBuilder(mockDb as any, { limitRelationDepth: -1 })).toThrow(
+    expect(() => new SchemaBuilder(mockDb, { limitRelationDepth: -1 })).toThrow(
       'nonnegative integer',
     )
   })
 
   test('float limitRelationDepth throws', () => {
     const mockDb = createMockDb()
-    // biome-ignore lint/suspicious/noExplicitAny: mock db for testing
-    expect(() => new SchemaBuilder(mockDb as any, { limitRelationDepth: 2.5 })).toThrow(
+    expect(() => new SchemaBuilder(mockDb, { limitRelationDepth: 2.5 })).toThrow(
       'nonnegative integer',
     )
   })
 
   test('same list/single suffixes throws', () => {
     const mockDb = createMockDb()
-    expect(
-      // biome-ignore lint/suspicious/noExplicitAny: mock db for testing
-      () => new SchemaBuilder(mockDb as any, { suffixes: { list: 'X', single: 'X' } }),
-    ).toThrow('cannot be the same')
+    expect(() => new SchemaBuilder(mockDb, { suffixes: { list: 'X', single: 'X' } })).toThrow(
+      'cannot be the same',
+    )
   })
 })
 
@@ -759,13 +706,8 @@ describe('constructor error paths', () => {
 
 describe('mutations: false config', () => {
   test('build() with mutations: false returns schema with no mutation type', () => {
-    const mockDb = createMockDb()
-    const findStub = { findMany: () => Promise.resolve([]), findFirst: () => Promise.resolve(null) }
-    // biome-ignore lint/suspicious/noExplicitAny: mock db for testing
-    ;(mockDb as any).query = { parent: findStub, child: findStub }
-
-    // biome-ignore lint/suspicious/noExplicitAny: mock db for testing
-    const builder = new SchemaBuilder(mockDb as any, { mutations: false })
+    const mockDb = createMockDb(testSchema, { parent: queryFindStub, child: queryFindStub })
+    const builder = new SchemaBuilder(mockDb, { mutations: false })
     const result = builder.build()
 
     expect(result.schema.getMutationType()).toBeUndefined()
@@ -776,24 +718,14 @@ describe('mutations: false config', () => {
 
 describe('logDebugInfo', () => {
   test('debug: true does not throw', () => {
-    const mockDb = createMockDb()
-    const findStub = { findMany: () => Promise.resolve([]), findFirst: () => Promise.resolve(null) }
-    // biome-ignore lint/suspicious/noExplicitAny: mock db for testing
-    ;(mockDb as any).query = { parent: findStub, child: findStub }
-
-    // biome-ignore lint/suspicious/noExplicitAny: mock db for testing
-    const builder = new SchemaBuilder(mockDb as any, { debug: true })
+    const mockDb = createMockDb(testSchema, { parent: queryFindStub, child: queryFindStub })
+    const builder = new SchemaBuilder(mockDb, { debug: true })
     expect(() => builder.build()).not.toThrow()
   })
 
   test('debug: { relationTree: true } does not throw', () => {
-    const mockDb = createMockDb()
-    const findStub = { findMany: () => Promise.resolve([]), findFirst: () => Promise.resolve(null) }
-    // biome-ignore lint/suspicious/noExplicitAny: mock db for testing
-    ;(mockDb as any).query = { parent: findStub, child: findStub }
-
-    // biome-ignore lint/suspicious/noExplicitAny: mock db for testing
-    const builder = new SchemaBuilder(mockDb as any, { debug: { relationTree: true } })
+    const mockDb = createMockDb(testSchema, { parent: queryFindStub, child: queryFindStub })
+    const builder = new SchemaBuilder(mockDb, { debug: { relationTree: true } })
     expect(() => builder.build()).not.toThrow()
   })
 })
