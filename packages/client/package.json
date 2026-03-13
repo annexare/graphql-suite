@@ -1,6 +1,6 @@
 {
   "name": "@drizzle-graphql-suite/client",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "type": "module",
   "description": "Type-safe GraphQL client with entity-based API and full Drizzle type inference",
   "license": "MIT",
