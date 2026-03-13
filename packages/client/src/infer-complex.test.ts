@@ -420,8 +420,6 @@ describe('InferEntityDefs - complex schema', () => {
         },
       },
     }
-    expect(
-      filter.rule?.parentItem?.fields?.some?.fieldType?.fields?.some?.value?.eq,
-    ).toBe('deep')
+    expect(filter.rule?.parentItem?.fields?.some?.fieldType?.fields?.some?.value?.eq).toBe('deep')
   })
 })
