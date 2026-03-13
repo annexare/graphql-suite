@@ -4,6 +4,7 @@
 export type RelationDef = {
   entity: string
   type: 'one' | 'many'
+  required?: boolean
 }
 
 export type EntityDef = {
@@ -70,7 +71,9 @@ type InferRelations<TDefs extends AnyEntityDefs, TEntity extends EntityDef, TSel
     ? TEntity['relations'][K]['entity'] extends keyof TDefs
       ? TEntity['relations'][K]['type'] extends 'many'
         ? InferResult<TDefs, TDefs[TEntity['relations'][K]['entity']], TSelect[K]>[]
-        : InferResult<TDefs, TDefs[TEntity['relations'][K]['entity']], TSelect[K]> | null
+        : TEntity['relations'][K]['required'] extends true
+          ? InferResult<TDefs, TDefs[TEntity['relations'][K]['entity']], TSelect[K]>
+          : InferResult<TDefs, TDefs[TEntity['relations'][K]['entity']], TSelect[K]> | null
       : never
     : never
 }

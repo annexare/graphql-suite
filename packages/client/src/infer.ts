@@ -22,8 +22,9 @@ type FindRelationConfig<TSchema, TTableName extends string> = {
 }[keyof TSchema]
 
 type MapRelation<T> =
-  T extends One<infer N, infer _TNullable>
-    ? { entity: N; type: 'one' }
+  T extends One<infer N, infer TIsNullable>
+    ? // Drizzle's One<_, TIsNullable>: true = FK is notNull (relation required), false = FK is nullable
+      { entity: N; type: 'one'; required: TIsNullable }
     : T extends Many<infer N>
       ? { entity: N; type: 'many' }
       : never
@@ -105,7 +106,7 @@ type ResolveRelationEntity<TSchema, TDbName extends string> =
 type ResolveRelationDefs<TSchema, TRels> = {
   [K in keyof TRels]: TRels[K] extends { entity: infer E; type: infer T }
     ? E extends string
-      ? { entity: ResolveRelationEntity<TSchema, E>; type: T }
+      ? Omit<TRels[K], 'entity'> & { entity: ResolveRelationEntity<TSchema, E>; type: T }
       : TRels[K]
     : TRels[K]
 }
