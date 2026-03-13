@@ -854,14 +854,13 @@ describe('extractColumnFilters', () => {
     expect(result).toBeDefined()
   })
 
-  test('OR with other fields throws', () => {
+  test('OR with other fields ANDs them', () => {
     const builder = getBuilder()
-    expect(() =>
-      builder.extractColumnFilters(parentCols.name, 'name', {
-        eq: 'Alice',
-        OR: [{ eq: 'Bob' }],
-      }),
-    ).toThrow('Cannot specify both')
+    const result = builder.extractColumnFilters(parentCols.name, 'name', {
+      eq: 'Alice',
+      OR: [{ eq: 'Bob' }, { eq: 'Charlie' }],
+    })
+    expect(result).toBeDefined()
   })
 })
 

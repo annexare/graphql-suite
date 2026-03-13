@@ -64,9 +64,21 @@ type ManyRelationFilter<TFilter> = {
   none?: TFilter
 }
 
-// Given a schema and a table's raw relation defs, produce relation filter fields
+// Helper: check if a relation's target entity can be resolved in the schema
+type IsResolvableRelation<TSchema, TRel> = TRel extends { entity: infer E }
+  ? E extends string
+    ? KeyForDbName<TSchema, E> extends keyof ExtractTables<TSchema>
+      ? true
+      : false
+    : false
+  : false
+
+// Given a schema and a table's raw relation defs, produce relation filter fields.
+// Relations whose target can't be resolved are omitted via key remapping.
 type InferRelationFilterFields<TSchema, TRels> = {
-  [K in keyof TRels]?: TRels[K] extends { entity: infer E; type: infer TRelType }
+  [K in keyof TRels as IsResolvableRelation<TSchema, TRels[K]> extends true
+    ? K
+    : never]?: TRels[K] extends { entity: infer E; type: infer TRelType }
     ? E extends string
       ? KeyForDbName<TSchema, E> extends infer RK
         ? RK extends keyof ExtractTables<TSchema>
