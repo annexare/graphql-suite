@@ -54,9 +54,43 @@ type ScalarFilterOps<T> = {
   isNotNull?: boolean | null
 }
 
-type InferFilters<TFields> = {
+type ScalarColumnFilters<TFields> = {
   [K in keyof TFields]?: ScalarFilterOps<NonNullable<TFields[K]>>
-} & { OR?: InferFilters<TFields>[] }
+}
+
+// Relation filter: for "many" relations, wrap target filters in quantifiers
+type ManyRelationFilter<TFilter> = {
+  some?: TFilter
+  every?: TFilter
+  none?: TFilter
+}
+
+// Given a schema and a table's raw relation defs, produce relation filter fields
+type InferRelationFilterFields<TSchema, TRels> = {
+  [K in keyof TRels]?: TRels[K] extends { entity: infer E; type: infer TRelType }
+    ? E extends string
+      ? KeyForDbName<TSchema, E> extends infer RK
+        ? RK extends keyof ExtractTables<TSchema>
+          ? ExtractTables<TSchema>[RK] extends infer TTarget
+            ? TTarget extends Table
+              ? TRelType extends 'many'
+                ? ManyRelationFilter<InferEntityFilters<TSchema, TTarget>>
+                : InferEntityFilters<TSchema, TTarget>
+              : never
+            : never
+          : never
+        : never
+      : never
+    : never
+}
+
+// Full entity filters: scalar columns + relation filters + OR combinator
+type InferEntityFilters<TSchema, T extends Table> = ScalarColumnFilters<
+  WireFormat<T['$inferSelect']>
+> &
+  InferRelationFilterFields<TSchema, InferRelationDefs<TSchema, TableDbName<T>>> & {
+    OR?: InferEntityFilters<TSchema, T>[]
+  }
 
 // ─── Input Types ──────────────────────────────────────────
 
@@ -118,7 +152,7 @@ type BuildEntityDef<TSchema, T> = T extends Table
   ? {
       fields: WireFormat<T['$inferSelect']>
       relations: ResolveRelationDefs<TSchema, InferRelationDefs<TSchema, TableDbName<T>>>
-      filters: InferFilters<WireFormat<T['$inferSelect']>>
+      filters: InferEntityFilters<TSchema, T>
       insertInput: InferInsertInput<T>
       updateInput: InferUpdateInput<T>
       orderBy: InferOrderBy<T>
