@@ -1332,19 +1332,28 @@ export class SchemaBuilder {
     const entries = Object.entries(operators)
 
     if (operators.OR) {
-      if (entries.length > 1) {
-        throw new GraphQLError(
-          `WHERE ${columnName}: Cannot specify both fields and 'OR' in column operators!`,
-        )
-      }
-
-      const variants: SQL[] = []
+      const orVariants: SQL[] = []
       for (const variant of operators.OR) {
         const extracted = this.extractColumnFilters(column, columnName, variant)
-        if (extracted) variants.push(extracted)
+        if (extracted) orVariants.push(extracted)
       }
 
-      return variants.length ? (variants.length > 1 ? or(...variants) : variants[0]) : undefined
+      const orClause =
+        orVariants.length > 1
+          ? or(...orVariants)
+          : orVariants.length === 1
+            ? orVariants[0]
+            : undefined
+
+      // If no other fields, return OR clause directly
+      if (entries.length <= 1) return orClause
+
+      // AND the OR clause with remaining field filters
+      const { OR: _, ...rest } = operators
+      const fieldClause = this.extractColumnFilters(column, columnName, rest)
+      if (!fieldClause) return orClause
+      if (!orClause) return fieldClause
+      return and(fieldClause, orClause)
     }
 
     const comparisonOps: Record<string, typeof eq> = { eq, ne, gt, gte, lt, lte }
@@ -1416,19 +1425,28 @@ export class SchemaBuilder {
     }
 
     if (filters.OR) {
-      if (columnEntries.length > 0 || relationEntries.length > 0) {
-        throw new GraphQLError(
-          `WHERE ${tableName}: Cannot specify both fields and 'OR' in table filters!`,
-        )
-      }
-
-      const variants: SQL[] = []
+      const orVariants: SQL[] = []
       for (const variant of filters.OR) {
         const extracted = this.extractAllFilters(table, tableName, variant)
-        if (extracted) variants.push(extracted)
+        if (extracted) orVariants.push(extracted)
       }
 
-      return variants.length ? (variants.length > 1 ? or(...variants) : variants[0]) : undefined
+      const orClause =
+        orVariants.length > 1
+          ? or(...orVariants)
+          : orVariants.length === 1
+            ? orVariants[0]
+            : undefined
+
+      // If no other fields, return OR clause directly
+      if (columnEntries.length === 0 && relationEntries.length === 0) return orClause
+
+      // AND the OR clause with remaining field filters
+      const { OR: _, ...rest } = filters
+      const fieldClause = this.extractAllFilters(table, tableName, rest)
+      if (!fieldClause) return orClause
+      if (!orClause) return fieldClause
+      return and(fieldClause, orClause)
     }
 
     const variants: SQL[] = []
