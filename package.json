@@ -1,6 +1,6 @@
 {
   "name": "drizzle-graphql-suite",
-  "version": "0.8.1",
+  "version": "0.8.2",
   "description": "Auto-generated GraphQL CRUD, type-safe clients, and React Query hooks from Drizzle PostgreSQL schemas",
   "author": "https://github.com/dmythro",
   "license": "MIT",
@@ -53,9 +53,9 @@
     }
   },
   "dependencies": {
-    "@drizzle-graphql-suite/client": "0.8.1",
-    "@drizzle-graphql-suite/query": "0.8.1",
-    "@drizzle-graphql-suite/schema": "0.8.1",
+    "@drizzle-graphql-suite/client": "0.8.2",
+    "@drizzle-graphql-suite/query": "0.8.2",
+    "@drizzle-graphql-suite/schema": "0.8.2",
     "graphql": "16.13.1"
   },
   "workspaces": [
