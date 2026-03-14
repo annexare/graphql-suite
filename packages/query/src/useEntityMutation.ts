@@ -2,6 +2,7 @@ import type {
   AnyEntityDefs,
   EntityClient,
   EntityDef,
+  EntityDefsRef,
   InferResult,
 } from '@drizzle-graphql-suite/client'
 import { type UseMutationResult, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -17,16 +18,18 @@ type InsertOptions<TResult> = {
 
 export function useEntityInsert<
   TDefs extends AnyEntityDefs,
-  TEntity extends EntityDef,
+  TEntityName extends string,
   TSelect extends Record<string, unknown>,
 >(
-  entity: EntityClient<TDefs, TEntity>,
+  entity: EntityClient<EntityDefsRef<TDefs>, TEntityName>,
   returning?: TSelect,
-  options?: InsertOptions<InferResult<TDefs, TEntity, TSelect>[]>,
+  options?: InsertOptions<InferResult<TDefs, TDefs[TEntityName] & EntityDef, TSelect>[]>,
 ): UseMutationResult<
-  InferResult<TDefs, TEntity, TSelect>[],
+  InferResult<TDefs, TDefs[TEntityName] & EntityDef, TSelect>[],
   Error,
-  { values: TEntity extends { insertInput: infer I } ? I[] : never }
+  {
+    values: TDefs[TEntityName] & EntityDef extends { insertInput: infer I } ? I[] : never
+  }
 > {
   const queryClient = useQueryClient()
   const shouldInvalidate = options?.invalidate !== false
@@ -36,7 +39,7 @@ export function useEntityInsert<
       // biome-ignore lint/suspicious/noExplicitAny: generic entity params
       return (await entity.insert({ ...params, returning } as any)) as InferResult<
         TDefs,
-        TEntity,
+        TDefs[TEntityName] & EntityDef,
         TSelect
       >[]
     },
@@ -67,13 +70,17 @@ type UpdateOptions<TResult> = {
 
 export function useEntityUpdate<
   TDefs extends AnyEntityDefs,
-  TEntity extends EntityDef,
+  TEntityName extends string,
   TSelect extends Record<string, unknown>,
 >(
-  entity: EntityClient<TDefs, TEntity>,
+  entity: EntityClient<EntityDefsRef<TDefs>, TEntityName>,
   returning?: TSelect,
-  options?: UpdateOptions<InferResult<TDefs, TEntity, TSelect>[]>,
-): UseMutationResult<InferResult<TDefs, TEntity, TSelect>[], Error, UpdateParams<TEntity>> {
+  options?: UpdateOptions<InferResult<TDefs, TDefs[TEntityName] & EntityDef, TSelect>[]>,
+): UseMutationResult<
+  InferResult<TDefs, TDefs[TEntityName] & EntityDef, TSelect>[],
+  Error,
+  UpdateParams<TDefs[TEntityName] & EntityDef>
+> {
   const queryClient = useQueryClient()
   const shouldInvalidate = options?.invalidate !== false
 
@@ -82,7 +89,7 @@ export function useEntityUpdate<
       // biome-ignore lint/suspicious/noExplicitAny: generic entity params
       return (await entity.update({ ...params, returning } as any)) as InferResult<
         TDefs,
-        TEntity,
+        TDefs[TEntityName] & EntityDef,
         TSelect
       >[]
     },
@@ -112,13 +119,17 @@ type DeleteOptions<TResult> = {
 
 export function useEntityDelete<
   TDefs extends AnyEntityDefs,
-  TEntity extends EntityDef,
+  TEntityName extends string,
   TSelect extends Record<string, unknown>,
 >(
-  entity: EntityClient<TDefs, TEntity>,
+  entity: EntityClient<EntityDefsRef<TDefs>, TEntityName>,
   returning?: TSelect,
-  options?: DeleteOptions<InferResult<TDefs, TEntity, TSelect>[]>,
-): UseMutationResult<InferResult<TDefs, TEntity, TSelect>[], Error, DeleteParams<TEntity>> {
+  options?: DeleteOptions<InferResult<TDefs, TDefs[TEntityName] & EntityDef, TSelect>[]>,
+): UseMutationResult<
+  InferResult<TDefs, TDefs[TEntityName] & EntityDef, TSelect>[],
+  Error,
+  DeleteParams<TDefs[TEntityName] & EntityDef>
+> {
   const queryClient = useQueryClient()
   const shouldInvalidate = options?.invalidate !== false
 
@@ -127,7 +138,7 @@ export function useEntityDelete<
       // biome-ignore lint/suspicious/noExplicitAny: generic entity params
       return (await entity.delete({ ...params, returning } as any)) as InferResult<
         TDefs,
-        TEntity,
+        TDefs[TEntityName] & EntityDef,
         TSelect
       >[]
     },

@@ -2,6 +2,7 @@ import type {
   AnyEntityDefs,
   EntityClient,
   EntityDef,
+  EntityDefsRef,
   InferResult,
 } from '@drizzle-graphql-suite/client'
 import { type UseInfiniteQueryResult, useInfiniteQuery } from '@tanstack/react-query'
@@ -27,13 +28,15 @@ type PageData<T> = {
 
 export function useEntityInfiniteQuery<
   TDefs extends AnyEntityDefs,
-  TEntity extends EntityDef,
+  TEntityName extends string,
   TSelect extends Record<string, unknown>,
 >(
-  entity: EntityClient<TDefs, TEntity>,
-  params: EntityInfiniteParams<TEntity, TSelect>,
+  entity: EntityClient<EntityDefsRef<TDefs>, TEntityName>,
+  params: EntityInfiniteParams<TDefs[TEntityName] & EntityDef, TSelect>,
   options?: EntityInfiniteOptions,
-): UseInfiniteQueryResult<{ pages: PageData<InferResult<TDefs, TEntity, TSelect>>[] }> {
+): UseInfiniteQueryResult<{
+  pages: PageData<InferResult<TDefs, TDefs[TEntityName] & EntityDef, TSelect>>[]
+}> {
   const queryKey = options?.queryKey ?? [
     'gql',
     'infinite',
@@ -44,7 +47,7 @@ export function useEntityInfiniteQuery<
   ]
 
   return useInfiniteQuery<
-    PageData<InferResult<TDefs, TEntity, TSelect>>,
+    PageData<InferResult<TDefs, TDefs[TEntityName] & EntityDef, TSelect>>,
     Error,
     // biome-ignore lint/suspicious/noExplicitAny: TanStack infinite query generic params
     any,
@@ -67,7 +70,7 @@ export function useEntityInfiniteQuery<
       const count = await entity.count({ where: params.where } as any)
 
       return {
-        items: items as InferResult<TDefs, TEntity, TSelect>[],
+        items: items as InferResult<TDefs, TDefs[TEntityName] & EntityDef, TSelect>[],
         count,
       }
     },

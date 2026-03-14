@@ -4,7 +4,7 @@ import { createEntityClient, type EntityClient } from './entity'
 import { GraphQLClientError, NetworkError } from './errors'
 import type { InferEntityDefs } from './infer'
 import { buildSchemaDescriptor } from './schema-builder'
-import type { AnyEntityDefs, ClientConfig, SchemaDescriptor } from './types'
+import type { AnyEntityDefs, ClientConfig, EntityDefsRef, SchemaDescriptor } from './types'
 
 export class GraphQLClient<
   TSchema extends SchemaDescriptor,
@@ -22,7 +22,7 @@ export class GraphQLClient<
 
   entity<TEntityName extends string & keyof TSchema & keyof TDefs>(
     entityName: TEntityName,
-  ): EntityClient<TDefs, TDefs[TEntityName]> {
+  ): EntityClient<EntityDefsRef<TDefs>, TEntityName> {
     const entityDef = this.schema[entityName]
     if (!entityDef) {
       throw new Error(`Entity '${entityName}' not found in schema`)
@@ -31,7 +31,7 @@ export class GraphQLClient<
     // biome-ignore lint/suspicious/noExplicitAny: type inference handled at call site
     return createEntityClient<any, any>(entityName, entityDef, this.schema, (query, variables) =>
       this.execute(query, variables),
-    ) as unknown as EntityClient<TDefs, TDefs[TEntityName]>
+    ) as unknown as EntityClient<EntityDefsRef<TDefs>, TEntityName>
   }
 
   async execute(

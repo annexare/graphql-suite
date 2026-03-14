@@ -2,6 +2,7 @@ import type {
   AnyEntityDefs,
   EntityClient,
   EntityDef,
+  EntityDefsRef,
   InferResult,
 } from '@drizzle-graphql-suite/client'
 import { type UseQueryResult, useQuery } from '@tanstack/react-query'
@@ -23,13 +24,13 @@ type EntityQueryOptions = {
 
 export function useEntityQuery<
   TDefs extends AnyEntityDefs,
-  TEntity extends EntityDef,
+  TEntityName extends string,
   TSelect extends Record<string, unknown>,
 >(
-  entity: EntityClient<TDefs, TEntity>,
-  params: EntityQueryParams<TEntity, TSelect>,
+  entity: EntityClient<EntityDefsRef<TDefs>, TEntityName>,
+  params: EntityQueryParams<TDefs[TEntityName] & EntityDef, TSelect>,
   options?: EntityQueryOptions,
-): UseQueryResult<InferResult<TDefs, TEntity, TSelect> | null> {
+): UseQueryResult<InferResult<TDefs, TDefs[TEntityName] & EntityDef, TSelect> | null> {
   const queryKey = options?.queryKey ?? [
     'gql',
     'single',
@@ -45,7 +46,7 @@ export function useEntityQuery<
       // biome-ignore lint/suspicious/noExplicitAny: generic entity params
       return (await entity.querySingle(params as any)) as InferResult<
         TDefs,
-        TEntity,
+        TDefs[TEntityName] & EntityDef,
         TSelect
       > | null
     },

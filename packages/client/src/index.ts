@@ -20,6 +20,7 @@ export type {
   AnyEntityDefs,
   ClientConfig,
   EntityDef,
+  EntityDefsRef,
   EntityDescriptor,
   InferResult,
   SchemaDescriptor,

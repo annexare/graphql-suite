@@ -9,54 +9,76 @@ import {
 import type {
   AnyEntityDefs,
   EntityDef,
+  EntityDefsRef,
   EntityDescriptor,
   InferResult,
   SchemaDescriptor,
 } from './types'
 
-export type EntityClient<TDefs extends AnyEntityDefs, TEntity extends EntityDef> = {
+// ─── Helper: resolve entity def from ref + name ──────────────
+
+type ResolveEntity<
+  TRef extends EntityDefsRef<AnyEntityDefs>,
+  TEntityName extends string,
+> = TRef['__defs'][TEntityName] & EntityDef
+
+// ─── EntityClient ────────────────────────────────────────────
+// Interface (not type alias) so TS serializes it by name in declarations.
+// Parameterized on TEntityName (string literal) instead of the full entity
+// def type, so the serialized form is compact:
+//   EntityClient<EntityDefsRef<InferEntityDefs<typeof schema, typeof config>>, "item">
+
+export interface EntityClient<
+  TRef extends EntityDefsRef<AnyEntityDefs>,
+  TEntityName extends string,
+> {
   query<S extends Record<string, unknown>>(params: {
     select: S
-    where?: TEntity extends { filters: infer F } ? F : never
+    where?: ResolveEntity<TRef, TEntityName> extends { filters: infer F } ? F : never
     limit?: number
     offset?: number
-    orderBy?: TEntity extends { orderBy: infer O } ? O : never
-  }): Promise<InferResult<TDefs, TEntity, S>[]>
+    orderBy?: ResolveEntity<TRef, TEntityName> extends { orderBy: infer O } ? O : never
+  }): Promise<InferResult<TRef['__defs'], ResolveEntity<TRef, TEntityName>, S>[]>
 
   querySingle<S extends Record<string, unknown>>(params: {
     select: S
-    where?: TEntity extends { filters: infer F } ? F : never
+    where?: ResolveEntity<TRef, TEntityName> extends { filters: infer F } ? F : never
     offset?: number
-    orderBy?: TEntity extends { orderBy: infer O } ? O : never
-  }): Promise<InferResult<TDefs, TEntity, S> | null>
+    orderBy?: ResolveEntity<TRef, TEntityName> extends { orderBy: infer O } ? O : never
+  }): Promise<InferResult<TRef['__defs'], ResolveEntity<TRef, TEntityName>, S> | null>
 
-  count(params?: { where?: TEntity extends { filters: infer F } ? F : never }): Promise<number>
+  count(params?: {
+    where?: ResolveEntity<TRef, TEntityName> extends { filters: infer F } ? F : never
+  }): Promise<number>
 
   insert<S extends Record<string, unknown>>(params: {
-    values: TEntity extends { insertInput: infer I } ? I[] : never
+    values: ResolveEntity<TRef, TEntityName> extends { insertInput: infer I } ? I[] : never
     returning?: S
-  }): Promise<InferResult<TDefs, TEntity, S>[]>
+  }): Promise<InferResult<TRef['__defs'], ResolveEntity<TRef, TEntityName>, S>[]>
 
   insertSingle<S extends Record<string, unknown>>(params: {
-    values: TEntity extends { insertInput: infer I } ? I : never
+    values: ResolveEntity<TRef, TEntityName> extends { insertInput: infer I } ? I : never
     returning?: S
-  }): Promise<InferResult<TDefs, TEntity, S> | null>
+  }): Promise<InferResult<TRef['__defs'], ResolveEntity<TRef, TEntityName>, S> | null>
 
   update<S extends Record<string, unknown>>(params: {
-    set: TEntity extends { updateInput: infer U } ? U : never
-    where?: TEntity extends { filters: infer F } ? F : never
+    set: ResolveEntity<TRef, TEntityName> extends { updateInput: infer U } ? U : never
+    where?: ResolveEntity<TRef, TEntityName> extends { filters: infer F } ? F : never
     returning?: S
-  }): Promise<InferResult<TDefs, TEntity, S>[]>
+  }): Promise<InferResult<TRef['__defs'], ResolveEntity<TRef, TEntityName>, S>[]>
 
   delete<S extends Record<string, unknown>>(params: {
-    where?: TEntity extends { filters: infer F } ? F : never
+    where?: ResolveEntity<TRef, TEntityName> extends { filters: infer F } ? F : never
     returning?: S
-  }): Promise<InferResult<TDefs, TEntity, S>[]>
+  }): Promise<InferResult<TRef['__defs'], ResolveEntity<TRef, TEntityName>, S>[]>
 }
 
 // ─── Implementation ────────────────────────────────────────
 
-export function createEntityClient<TDefs extends AnyEntityDefs, TEntity extends EntityDef>(
+export function createEntityClient<
+  TRef extends EntityDefsRef<AnyEntityDefs>,
+  TEntityName extends string,
+>(
   entityName: string,
   entityDef: EntityDescriptor,
   schema: SchemaDescriptor,
@@ -64,7 +86,7 @@ export function createEntityClient<TDefs extends AnyEntityDefs, TEntity extends 
     query: string,
     variables: Record<string, unknown>,
   ) => Promise<Record<string, unknown>>,
-): EntityClient<TDefs, TEntity> {
+): EntityClient<TRef, TEntityName> {
   return {
     async query(params) {
       const { select, where, limit, offset, orderBy } = params

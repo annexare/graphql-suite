@@ -18,6 +18,11 @@ export type EntityDef = {
 
 export type AnyEntityDefs = Record<string, EntityDef>
 
+/** Opaque wrapper that prevents TS from expanding entity defs during serialization */
+export interface EntityDefsRef<TDefs extends AnyEntityDefs> {
+  readonly __defs: TDefs
+}
+
 // ─── Schema Descriptor Types ───────────────────────────────
 // These mirror the generated runtime schema object
 

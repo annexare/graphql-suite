@@ -2,6 +2,7 @@ import type {
   AnyEntityDefs,
   EntityClient,
   EntityDef,
+  EntityDefsRef,
   InferResult,
 } from '@drizzle-graphql-suite/client'
 import { type UseQueryResult, useQuery } from '@tanstack/react-query'
@@ -24,13 +25,13 @@ type EntityListOptions = {
 
 export function useEntityList<
   TDefs extends AnyEntityDefs,
-  TEntity extends EntityDef,
+  TEntityName extends string,
   TSelect extends Record<string, unknown>,
 >(
-  entity: EntityClient<TDefs, TEntity>,
-  params: EntityListParams<TEntity, TSelect>,
+  entity: EntityClient<EntityDefsRef<TDefs>, TEntityName>,
+  params: EntityListParams<TDefs[TEntityName] & EntityDef, TSelect>,
   options?: EntityListOptions,
-): UseQueryResult<InferResult<TDefs, TEntity, TSelect>[]> {
+): UseQueryResult<InferResult<TDefs, TDefs[TEntityName] & EntityDef, TSelect>[]> {
   const queryKey = options?.queryKey ?? [
     'gql',
     'list',
@@ -45,7 +46,11 @@ export function useEntityList<
     queryKey,
     queryFn: async () => {
       // biome-ignore lint/suspicious/noExplicitAny: generic entity params
-      return (await entity.query(params as any)) as InferResult<TDefs, TEntity, TSelect>[]
+      return (await entity.query(params as any)) as InferResult<
+        TDefs,
+        TDefs[TEntityName] & EntityDef,
+        TSelect
+      >[]
     },
     enabled: options?.enabled,
     gcTime: options?.gcTime,
