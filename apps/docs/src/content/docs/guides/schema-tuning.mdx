@@ -1,0 +1,121 @@
+---
+title: Schema Tuning
+description: Optimizing generated schema size and performance with relation depth, pruning, and table configuration
+---
+
+The generated GraphQL schema grows combinatorially with the number of tables and relation depth. A schema with 13 tables can produce anywhere from 450 to 9,000 types depending on configuration. This guide covers the knobs you can turn to keep the schema fast and manageable.
+
+## Impact of relation depth
+
+Measurements from a news application with 13 tables:
+
+| `limitRelationDepth` | `limitSelfRelationDepth` | Types | SDL Size | SDL Gen Time |
+| -------------------- | ------------------------ | ----- | -------- | ------------ |
+| 2 | 1 | ~450 | ~138 KB | ~40ms |
+| 3 | 1 | ~1,100 | ~372 KB | ~100ms |
+| 5 | 2 | ~8,900 | ~3,500 KB | ~350ms |
+
+Each additional depth level multiplies the number of generated types by the average fan-out of your relations.
+
+## Recommendations
+
+- **Start with depth 2** for most applications. This covers the common pattern of fetching an entity with its direct relations (e.g., article with author and categories).
+- **Increase to depth 3** only if your client queries genuinely need deeper nesting (e.g., article with author with organization).
+- **Never use depth 5+** on schemas with many cross-references. The type explosion will slow down schema generation and increase memory usage in GraphQL tooling.
+
+```ts
+const config = {
+  limitRelationDepth: 2,
+  limitSelfRelationDepth: 1,
+} satisfies BuildSchemaConfig
+```
+
+## Using pruneRelations
+
+When specific relations cause disproportionate type expansion, prune them individually instead of reducing the global depth.
+
+### Remove a back-reference entirely
+
+```ts
+pruneRelations: {
+  'user.reactions': false,
+}
+```
+
+The `reactions` field will not appear on the `User` type at all.
+
+### Stop expansion at one level
+
+```ts
+pruneRelations: {
+  'article.author': 'leaf',
+}
+```
+
+The `author` field on `Article` will include scalar columns only — no nested relations like `author.articles` or `author.organization`.
+
+### Whitelist specific child relations
+
+```ts
+pruneRelations: {
+  'attribute.asset': { only: ['selectedVariant'] },
+}
+```
+
+The `asset` field on `Attribute` will include scalar columns plus only the `selectedVariant` relation.
+
+## Making tables read-only
+
+Junction tables and audit logs rarely need mutations. Mark them as read-only to reduce the schema surface:
+
+```ts
+tables: {
+  config: {
+    articleCategory: { queries: true, mutations: false },
+    auditLog: { queries: true, mutations: false },
+  },
+}
+```
+
+## Excluding internal tables
+
+Auth tables, sessions, and other internal tables can be removed entirely:
+
+```ts
+tables: {
+  exclude: ['session', 'account', 'verificationToken'],
+}
+```
+
+Excluded tables produce no types, no queries, and no mutations. Relations pointing to excluded tables are automatically skipped.
+
+:::caution
+Excluding a table that other tables reference via relations will remove those relation fields from the schema. Make sure no client queries depend on those paths before excluding.
+:::
+
+## Combining strategies
+
+A typical production configuration uses several of these techniques together:
+
+```ts
+const config = {
+  mutations: true,
+  limitRelationDepth: 2,
+  limitSelfRelationDepth: 1,
+  suffixes: { list: 's', single: '' },
+  tables: {
+    exclude: ['session', 'account', 'verificationToken'],
+    config: {
+      articleCategory: { queries: true, mutations: false },
+    },
+  },
+  pruneRelations: {
+    'user.reactions': false,
+    'category.articles': 'leaf',
+  },
+} as const satisfies BuildSchemaConfig
+```
+
+:::tip
+Enable `debug: { schemaSize: true }` during development to log the number of generated types and SDL size after each build. This makes it easy to see the effect of configuration changes.
+:::

@@ -1,0 +1,44 @@
+---
+title: Installation
+description: How to install graphql-suite packages for your server, client, and React app
+---
+
+Install the packages you need depending on your use case. All three are published independently and can be used separately.
+
+## Server (schema builder)
+
+```bash
+bun add @graphql-suite/schema graphql drizzle-orm
+```
+
+This is the core package. It takes your Drizzle table definitions and produces a full GraphQL schema at runtime.
+
+## Client (type-safe GraphQL client)
+
+```bash
+bun add @graphql-suite/client drizzle-orm
+```
+
+A standalone client that builds type-safe GraphQL queries from your Drizzle schema. Works in any JavaScript environment (Node, Bun, browsers, React Native).
+
+## React hooks (optional)
+
+```bash
+bun add @graphql-suite/query @tanstack/react-query react
+```
+
+Wraps the client in React hooks powered by TanStack Query. Use this if you are building a React frontend.
+
+:::note
+All packages also work with **npm**, **pnpm**, and **yarn**. Replace `bun add` with your preferred package manager's install command.
+:::
+
+## Peer dependencies
+
+`drizzle-orm` and `graphql` are **peer dependencies** — you must install them alongside the suite packages. This ensures your application uses a single copy of each library, avoiding version conflicts.
+
+| Package | Peer dependencies |
+| ------- | ----------------- |
+| `@graphql-suite/schema` | `drizzle-orm >= 0.44`, `graphql >= 16` |
+| `@graphql-suite/client` | `drizzle-orm >= 0.44` |
+| `@graphql-suite/query` | `react >= 18`, `@tanstack/react-query >= 5` |

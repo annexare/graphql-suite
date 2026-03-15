@@ -1,0 +1,30 @@
+---
+title: graphql-suite
+description: Auto-generated GraphQL CRUD, type-safe clients, and React Query hooks from Drizzle PostgreSQL schemas
+template: splash
+hero:
+  tagline: Define your Drizzle schema once — get a full GraphQL API, type-safe client, and React hooks automatically.
+  actions:
+    - text: Get Started
+      link: /getting-started/installation/
+      icon: right-arrow
+    - text: View on GitHub
+      link: https://github.com/annexare/graphql-suite
+      variant: minimal
+---
+
+## Three packages, one workflow
+
+**graphql-suite** turns your Drizzle ORM table definitions into a production-ready GraphQL stack with zero code generation and full TypeScript inference.
+
+### @graphql-suite/schema
+
+Generates a complete GraphQL schema with CRUD operations directly from your Drizzle PostgreSQL tables. Queries, mutations, filters, ordering, pagination, relations, and JSONB fields are all handled automatically at runtime — no codegen step required.
+
+### @graphql-suite/client
+
+A type-safe GraphQL client that infers request and response types from your Drizzle schema. Build queries with full autocomplete for select fields, filters, and relation traversals.
+
+### @graphql-suite/query
+
+React hooks wrapping TanStack Query for the client. Drop `useEntityList`, `useEntityQuery`, and `useEntityMutation` into your components and get caching, refetching, and optimistic updates out of the box.

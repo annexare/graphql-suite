@@ -1,0 +1,108 @@
+---
+title: Server-Side Rendering
+description: Using Drizzle GraphQL Suite with server-side rendering
+---
+
+The query hooks (`useEntityList`, `useEntityQuery`, etc.) rely on TanStack Query, which is inherently async. They do not work with synchronous `renderToString` directly. For SSR, the recommended approach is to fetch data on the server and pass it as props.
+
+## Server-side data fetching
+
+Execute GraphQL queries on the server using the yoga server (or any GraphQL executor), then pass the results as props to your React components:
+
+```ts
+import { renderToString } from 'react-dom/server'
+import { createElement } from 'react'
+import { createYoga } from 'graphql-yoga'
+import { buildSchema } from '@graphql-suite/schema'
+
+// Build schema once at startup
+const { schema } = buildSchema(db, config)
+const yoga = createYoga({ schema })
+
+async function renderArticlesPage() {
+  // 1. Execute query on the server
+  const res = await yoga.fetch(
+    new Request('http://localhost/graphql', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        query: '{ articles { id title author { displayName } } }',
+      }),
+    }),
+  )
+  const { data } = await res.json()
+
+  // 2. Render component with data as props
+  const html = renderToString(
+    createElement(ArticlesPage, { articles: data.articles }),
+  )
+
+  // 3. Return full HTML document
+  return `<!DOCTYPE html><html><body><div id="root">${html}</div></body></html>`
+}
+```
+
+## Component structure
+
+Design your components to accept data as props for SSR compatibility:
+
+```tsx
+type ArticlesPageProps = {
+  articles: Array<{ id: string; title: string; author: { displayName: string } | null }>
+}
+
+function ArticlesPage({ articles }: ArticlesPageProps) {
+  return (
+    <ul>
+      {articles.map((article) => (
+        <li key={article.id}>
+          {article.title} — {article.author?.displayName}
+        </li>
+      ))}
+    </ul>
+  )
+}
+```
+
+On the client side, these same components can be hydrated and then use the query hooks for subsequent data fetching.
+
+## Hydration with TanStack Query
+
+If you want TanStack Query to pick up the server-fetched data on the client without refetching, you can prefill the query cache:
+
+```tsx
+import { dehydrate, HydrationBoundary, QueryClient } from '@tanstack/react-query'
+
+async function getServerSideProps() {
+  const queryClient = new QueryClient()
+
+  // Prefetch into the query cache
+  await queryClient.prefetchQuery({
+    queryKey: ['gql', 'list', { id: true, title: true }],
+    queryFn: () => fetchArticlesFromYoga(),
+  })
+
+  return { dehydratedState: dehydrate(queryClient) }
+}
+
+function Page({ dehydratedState }) {
+  return (
+    <HydrationBoundary state={dehydratedState}>
+      <ArticlesPage />
+    </HydrationBoundary>
+  )
+}
+```
+
+:::caution
+The `queryKey` used for prefetching must match exactly what the hook generates. See the [Queries](/query/queries/) page for the default key structure.
+:::
+
+## When to use SSR vs. client-only
+
+| Scenario | Approach |
+| -------- | -------- |
+| Public pages needing SEO | SSR with server-side fetch |
+| Dashboard / admin panels | Client-only with query hooks |
+| Initial page load performance | SSR + hydration |
+| Real-time data | Client-only with short `staleTime` |

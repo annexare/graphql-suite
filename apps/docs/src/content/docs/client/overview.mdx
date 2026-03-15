@@ -1,0 +1,75 @@
+---
+title: Client Package Overview
+description: Type-safe GraphQL client that infers types from your Drizzle schema with no code generation
+---
+
+`@graphql-suite/client` is a type-safe GraphQL client that infers request and response types directly from your Drizzle schema. There is no code generation step — types flow from your schema definition at the TypeScript level.
+
+## What it does
+
+- Builds type-safe GraphQL queries and mutations from `select`, `where`, `orderBy`, and input objects
+- Infers response types based on the `select` shape — only selected fields appear in the result type
+- Provides an entity-based API: `client.entity('article').query(...)`, `.insert(...)`, etc.
+- Works in any JavaScript environment (Node, Bun, browsers, React Native)
+
+## Entity-based API
+
+The client is organized around entities (tables). You access an entity by name and call operations on it:
+
+```ts
+// Query
+const articles = await client.entity('article').query({
+  select: { id: true, title: true, author: { name: true } },
+  where: { status: { eq: 'published' } },
+  limit: 10,
+})
+
+// Insert
+await client.entity('article').insertSingle({
+  values: { title: 'New Article', authorId: '...' },
+  returning: { id: true },
+})
+
+// Update
+await client.entity('article').update({
+  set: { title: 'Updated Title' },
+  where: { id: { eq: '...' } },
+  returning: { id: true, title: true },
+})
+
+// Delete
+await client.entity('article').delete({
+  where: { id: { eq: '...' } },
+})
+
+// Count
+const count = await client.entity('article').count({
+  where: { status: { eq: 'published' } },
+})
+```
+
+## Key exports
+
+| Export | Description |
+|--------|-------------|
+| `createDrizzleClient` | Factory function that infers types from a Drizzle schema (recommended) |
+| `GraphQLClient` | Class for manual setup with a pre-built schema descriptor |
+| `EntityClient` | Type representing the entity API interface |
+| `GraphQLClientError` | Error class for GraphQL response errors |
+| `NetworkError` | Error class for network failures |
+| `InferEntityDefs` | Utility type for inferring entity definitions from schema |
+| `InferResult` | Utility type for inferring result type from a select shape |
+| `SelectInput` | Utility type constraining select to valid fields and relations |
+| `buildSchemaDescriptor` | Builds a runtime schema descriptor from Drizzle schema exports |
+
+## How types flow
+
+```
+Drizzle schema → InferEntityDefs → EntityClient methods → InferResult
+     ↓                  ↓                   ↓                  ↓
+  Tables &         Entity defs        Type-safe params     Typed response
+  Relations      (fields, filters,    (select, where,      (only selected
+                  inputs, orderBy)     orderBy, values)      fields)
+```
+
+The `select` parameter is the key mechanism: it determines both the GraphQL query fields and the TypeScript return type. If you select `{ id: true, title: true }`, the result type contains only `id` and `title`.

@@ -1,0 +1,121 @@
+---
+title: Permissions
+description: Control which tables and operations are exposed in the GraphQL schema using permissive and restricted permission modes
+---
+
+The permission system lets you create multiple views of the same schema with different access levels. Permissions control which tables and operations (query, insert, update, delete) are included in a given schema variant.
+
+## Permission modes
+
+### `permissive(id, tables?)`
+
+Allow everything by default. Tables listed in `tables` restrict access for those specific tables.
+
+```ts
+import { permissive } from '@graphql-suite/schema'
+
+// Full access to everything
+const adminPermissions = permissive('admin')
+
+// Full access except: articles are read-only
+const editorPermissions = permissive('editor', {
+  article: { query: true, insert: true, update: true, delete: false },
+})
+```
+
+### `restricted(id, tables?)`
+
+Deny everything by default. Only tables listed in `tables` are accessible.
+
+```ts
+import { restricted } from '@graphql-suite/schema'
+
+// Access to specific tables only
+const publicPermissions = restricted('public', {
+  article: { query: true },
+  category: { query: true },
+  tag: { query: true },
+})
+```
+
+### `readOnly`
+
+Convenience helper that returns a `TableAccess` object allowing queries but denying all mutations.
+
+```ts
+import { readOnly, restricted } from '@graphql-suite/schema'
+
+const viewerPermissions = restricted('viewer', {
+  article: readOnly(),
+  category: readOnly(),
+})
+```
+
+The `readOnly()` function returns `{ query: true, insert: false, update: false, delete: false }`.
+
+## Table access values
+
+Each table in the `tables` record accepts either:
+
+- **`boolean`** — `true` for full access, `false` to exclude entirely
+- **`TableAccess` object** — granular control over each operation type
+
+```ts
+type TableAccess = {
+  query?: boolean
+  insert?: boolean
+  update?: boolean
+  delete?: boolean
+}
+```
+
+In `restricted` mode, any operation not explicitly set to `true` defaults to denied. In `permissive` mode, any operation not explicitly set to `false` defaults to allowed.
+
+## Applying permissions with `withPermissions`
+
+`buildSchema` returns a `withPermissions` function that creates a new GraphQL schema with the given permissions applied.
+
+```ts
+import { buildSchema, permissive, readOnly, restricted } from '@graphql-suite/schema'
+
+const { schema, withPermissions } = buildSchema(db, config)
+
+// Public API: read-only access to selected tables
+const publicSchema = withPermissions(restricted('public', {
+  article: { query: true },
+  category: { query: true },
+  tag: { query: true },
+}))
+
+// Editor API: full access except delete
+const editorSchema = withPermissions(permissive('editor', {
+  article: { query: true, insert: true, update: true, delete: false },
+}))
+
+// Admin API: unrestricted access
+const adminSchema = withPermissions(permissive('admin'))
+```
+
+:::tip
+Permission schemas are cached by `id`. If you call `withPermissions` with the same `id` multiple times, the cached schema is returned. Use `clearPermissionCache(id)` to invalidate a specific cache entry, or `clearPermissionCache()` to clear all entries.
+:::
+
+## Using different schemas per request
+
+A common pattern is selecting the schema based on the authenticated user's role:
+
+```ts
+const { schema, withPermissions } = buildSchema(db, config)
+
+const schemas = {
+  public: withPermissions(restricted('public', { article: { query: true } })),
+  editor: withPermissions(permissive('editor')),
+  admin: withPermissions(permissive('admin')),
+}
+
+// In your HTTP handler
+function getSchemaForRequest(req) {
+  const role = req.user?.role ?? 'public'
+  return schemas[role] ?? schemas.public
+}
+```

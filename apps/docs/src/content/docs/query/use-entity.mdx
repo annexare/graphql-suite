@@ -1,0 +1,35 @@
+---
+title: useEntity
+description: Obtain an entity client from the GraphQL provider context
+---
+
+The `useEntity` hook retrieves an entity client by name from the `GraphQLProvider` context. It is a convenience wrapper around `useGraphQLClient().entity(name)` with React memoization.
+
+## Usage
+
+```tsx
+import { useEntity } from '@graphql-suite/query'
+
+function MyComponent() {
+  const articleEntity = useEntity('article')
+  // Pass articleEntity to useEntityList, useEntityQuery, etc.
+}
+```
+
+The returned entity client can be used with any of the query and mutation hooks.
+
+## Type-safe alternative
+
+`useEntity` infers types from the provider context, but the inference can be limited since the provider uses a generic client type. For full type safety on `select`, `where`, and `orderBy` parameters, obtain the entity at module level from the client instance:
+
+```ts
+import { client } from './graphql-client'
+
+const articleEntity = client.entity('article')
+```
+
+This preserves the complete type information from your Drizzle schema, giving you autocomplete and type checking on all query parameters.
+
+:::tip
+Use module-level `client.entity()` in production code for the best type inference. Use `useEntity()` when you need dynamic entity selection or when the entity name comes from props/state.
+:::

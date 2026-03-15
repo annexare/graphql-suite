@@ -1,0 +1,108 @@
+---
+title: Queries
+description: Query hooks for fetching entity data with useEntityList, useEntityQuery, and useEntityInfiniteQuery
+---
+
+The query package provides three hooks for reading data, each wrapping a TanStack Query primitive.
+
+## useEntityList
+
+Fetches a list of entities. Returns a `UseQueryResult` containing an array of results.
+
+```tsx
+import { useEntityList } from '@graphql-suite/query'
+
+const { data, isPending, error } = useEntityList(articleEntity, {
+  select: { id: true, title: true, author: { name: true } },
+  where: { status: { eq: 'published' } },
+  orderBy: { column: 'createdAt', direction: 'desc' },
+  limit: 10,
+  offset: 0,
+})
+```
+
+**Parameters:**
+
+| Parameter | Type | Description |
+| --------- | ---- | ----------- |
+| `select` | `Record<string, true \| nested>` | Fields and relations to fetch |
+| `where` | filter object | Optional filter conditions |
+| `orderBy` | `{ column, direction }` | Optional ordering |
+| `limit` | `number` | Optional row limit |
+| `offset` | `number` | Optional row offset |
+
+## useEntityQuery
+
+Fetches a single entity. Returns a `UseQueryResult` containing one result or `null`.
+
+```tsx
+import { useEntityQuery } from '@graphql-suite/query'
+
+const { data, isPending } = useEntityQuery(articleEntity, {
+  select: { id: true, title: true, blocks: { content: true, type: true } },
+  where: { id: { eq: articleId } },
+})
+```
+
+**Parameters:**
+
+| Parameter | Type | Description |
+| --------- | ---- | ----------- |
+| `select` | `Record<string, true \| nested>` | Fields and relations to fetch |
+| `where` | filter object | Optional filter conditions |
+| `orderBy` | `{ column, direction }` | Optional ordering |
+| `offset` | `number` | Optional offset |
+
+## useEntityInfiniteQuery
+
+Infinite-scroll pagination using TanStack Query's `useInfiniteQuery`. Fetches pages of results and tracks total count automatically.
+
+```tsx
+import { useEntityInfiniteQuery } from '@graphql-suite/query'
+
+const { data, fetchNextPage, hasNextPage, isFetchingNextPage } =
+  useEntityInfiniteQuery(articleEntity, {
+    select: { id: true, title: true },
+    pageSize: 20,
+  })
+
+// Access all loaded items
+const allItems = data?.pages.flatMap((page) => page.items) ?? []
+```
+
+Each page object contains `{ items, count }` where `count` is the total number of matching rows. The hook uses this to determine `hasNextPage`.
+
+**Parameters:**
+
+| Parameter | Type | Description |
+| --------- | ---- | ----------- |
+| `select` | `Record<string, true \| nested>` | Fields and relations to fetch |
+| `pageSize` | `number` | Number of items per page |
+| `where` | filter object | Optional filter conditions |
+| `orderBy` | `{ column, direction }` | Optional ordering |
+
+## Common options
+
+All three hooks accept an optional third argument with these options:
+
+| Option | Type | Description |
+| ------ | ---- | ----------- |
+| `enabled` | `boolean` | Disable the query (e.g., until a dependency is ready) |
+| `gcTime` | `number` | Garbage collection time in milliseconds |
+| `staleTime` | `number` | Time before data is considered stale |
+| `refetchOnWindowFocus` | `boolean` | Refetch when the window regains focus |
+| `queryKey` | `unknown[]` | Override the auto-generated query key |
+
+:::note
+`useEntityInfiniteQuery` does not support `refetchOnWindowFocus` in its options.
+:::
+
+## Query keys
+
+By default, hooks generate query keys from the parameters. All keys are prefixed with `'gql'` and include the operation type:
+
+- `useEntityList` — `['gql', 'list', select, where, orderBy, limit, offset]`
+- `useEntityQuery` — `['gql', 'single', select, where, orderBy, offset]`
+- `useEntityInfiniteQuery` — `['gql', 'infinite', select, where, orderBy, pageSize]`
+
+Mutation hooks invalidate all queries under the `['gql']` prefix by default. You can override query keys with the `queryKey` option if you need more granular cache control.

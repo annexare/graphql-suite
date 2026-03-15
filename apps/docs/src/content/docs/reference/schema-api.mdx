@@ -1,0 +1,330 @@
+---
+title: Schema API Reference
+description: Complete API reference for @graphql-suite/schema
+---
+
+## Functions
+
+### buildSchema
+
+```ts
+function buildSchema(
+  db: PgDatabase<any, any, any>,
+  config?: BuildSchemaConfig,
+): {
+  schema: GraphQLSchema
+  entities: GeneratedEntities
+  withPermissions: (permissions: PermissionConfig) => GraphQLSchema
+  clearPermissionCache: (id?: string) => void
+}
+```
+
+Main entry point. Takes a Drizzle `PgDatabase` instance and optional configuration, returns the generated GraphQL schema, entity definitions, and permission helpers.
+
+### buildSchemaFromDrizzle
+
+```ts
+function buildSchemaFromDrizzle(
+  drizzleSchema: Record<string, unknown>,
+  config?: BuildSchemaConfig,
+): {
+  schema: GraphQLSchema
+  entities: GeneratedEntities
+  withPermissions: (permissions: PermissionConfig) => GraphQLSchema
+  clearPermissionCache: (id?: string) => void
+}
+```
+
+Builds a schema directly from Drizzle schema exports without a database connection. Creates stub resolvers — intended for introspection, codegen, and testing.
+
+### buildEntities
+
+```ts
+function buildEntities(
+  db: PgDatabase<any, any, any>,
+  config?: BuildSchemaConfig,
+): GeneratedEntities
+```
+
+Returns the `GeneratedEntities` object (queries, mutations, inputs, types) without building a full `GraphQLSchema`. Useful for composing into an existing schema.
+
+### generateSDL
+
+```ts
+function generateSDL(
+  drizzleSchema: Record<string, unknown>,
+  config?: BuildSchemaConfig,
+): string
+```
+
+Generates the GraphQL SDL string from a Drizzle schema. Codegen utility.
+
+### generateTypes
+
+```ts
+function generateTypes(
+  drizzleSchema: Record<string, unknown>,
+  config?: BuildSchemaConfig,
+  options?: CodegenOptions,
+): string
+```
+
+Generates TypeScript type definitions from a Drizzle schema. Codegen utility.
+
+### generateEntityDefs
+
+```ts
+function generateEntityDefs(
+  drizzleSchema: Record<string, unknown>,
+  config?: BuildSchemaConfig,
+  options?: CodegenOptions,
+): string
+```
+
+Generates entity definition types for use with `@graphql-suite/client`. Codegen utility.
+
+### permissive
+
+```ts
+function permissive(
+  id: string,
+  tables?: Record<string, boolean | TableAccess>,
+): PermissionConfig
+```
+
+Creates a permissive permission config. In permissive mode, all tables are accessible unless explicitly denied.
+
+### restricted
+
+```ts
+function restricted(
+  id: string,
+  tables?: Record<string, boolean | TableAccess>,
+): PermissionConfig
+```
+
+Creates a restricted permission config. In restricted mode, all tables are denied unless explicitly allowed.
+
+### readOnly
+
+```ts
+function readOnly(): TableAccess
+```
+
+Returns a `TableAccess` object with `query: true` and all mutations set to `false`.
+
+### withRowSecurity
+
+```ts
+function withRowSecurity(
+  rules: Record<string, (context: any) => Record<string, unknown>>,
+): HooksConfig
+```
+
+Generates a `HooksConfig` that injects WHERE clauses from row-level security rules. Rules are applied as `before` hooks on query, querySingle, count, update, and delete operations.
+
+### mergeHooks
+
+```ts
+function mergeHooks(...configs: HooksConfig[]): HooksConfig
+```
+
+Merges multiple hook configurations. When multiple hooks target the same table and operation, they are composed in order.
+
+## Classes
+
+### SchemaBuilder
+
+```ts
+class SchemaBuilder {
+  constructor(db: PgDatabase<any, any, any>, config?: BuildSchemaConfig)
+  build(): {
+    schema: GraphQLSchema
+    entities: GeneratedEntities
+    withPermissions: (permissions: PermissionConfig) => GraphQLSchema
+    clearPermissionCache: (id?: string) => void
+  }
+  buildEntities(): GeneratedEntities
+}
+```
+
+The underlying builder class. Exposed for advanced use cases where you need more control over the build process.
+
+## Constants
+
+### GraphQLJSON
+
+Custom GraphQL scalar type for JSONB columns. Serializes and parses arbitrary JSON values.
+
+## Types
+
+### BuildSchemaConfig
+
+```ts
+type BuildSchemaConfig = {
+  mutations?: boolean
+  limitRelationDepth?: number
+  limitSelfRelationDepth?: number
+  suffixes?: { list?: string; single?: string }
+  hooks?: HooksConfig
+  tables?: {
+    exclude?: readonly string[]
+    config?: Record<string, TableOperations>
+  }
+  pruneRelations?: Record<string, RelationPruneRule>
+  debug?: boolean | { schemaSize?: boolean; relationTree?: boolean }
+}
+```
+
+### GeneratedEntities
+
+```ts
+type GeneratedEntities = {
+  queries: Record<string, GraphQLFieldConfig<any, any>>
+  mutations: Record<string, GraphQLFieldConfig<any, any>>
+  inputs: Record<string, GraphQLInputObjectType>
+  types: Record<string, GraphQLObjectType>
+}
+```
+
+### PermissionConfig
+
+```ts
+type PermissionConfig = {
+  id: string
+  mode: 'permissive' | 'restricted'
+  tables?: Record<string, boolean | TableAccess>
+}
+```
+
+### TableAccess
+
+```ts
+type TableAccess = {
+  query?: boolean
+  insert?: boolean
+  update?: boolean
+  delete?: boolean
+}
+```
+
+### TableOperations
+
+```ts
+type TableOperations = {
+  queries?: boolean
+  mutations?: boolean
+}
+```
+
+### RelationPruneRule
+
+```ts
+type RelationPruneRule = false | 'leaf' | { only: string[] }
+```
+
+### HooksConfig
+
+```ts
+type HooksConfig = {
+  [tableName: string]: TableHookConfig
+}
+```
+
+### TableHookConfig
+
+```ts
+type TableHookConfig = {
+  [K in OperationType]?: OperationHooks
+}
+```
+
+### OperationHooks
+
+```ts
+type OperationHooks =
+  | { before?: BeforeHookFn; after?: AfterHookFn }
+  | { resolve: ResolveHookFn }
+```
+
+### BeforeHookFn
+
+```ts
+type BeforeHookFn = (
+  ctx: HookContext,
+) => Promise<BeforeHookResult | undefined> | BeforeHookResult | undefined
+```
+
+### AfterHookFn
+
+```ts
+type AfterHookFn = (ctx: AfterHookContext) => Promise<any> | any
+```
+
+### ResolveHookFn
+
+```ts
+type ResolveHookFn = (ctx: ResolveHookContext) => Promise<any> | any
+```
+
+### HookContext
+
+```ts
+type HookContext = {
+  args: any
+  context: any
+  info: GraphQLResolveInfo
+}
+```
+
+### AfterHookContext
+
+```ts
+type AfterHookContext = {
+  result: any
+  beforeData: any
+  context: any
+  info: GraphQLResolveInfo
+}
+```
+
+### ResolveHookContext
+
+```ts
+type ResolveHookContext = HookContext & {
+  defaultResolve: (overrideArgs?: any) => Promise<any>
+}
+```
+
+### OperationType
+
+```ts
+type OperationType =
+  | 'query'
+  | 'querySingle'
+  | 'count'
+  | 'insert'
+  | 'insertSingle'
+  | 'update'
+  | 'delete'
+```
+
+### BeforeHookResult
+
+```ts
+type BeforeHookResult = {
+  args?: any
+  data?: any
+}
+```
+
+### CodegenOptions
+
+```ts
+type CodegenOptions = {
+  drizzle?: {
+    importPath: string
+    typeNames?: Record<string, string>
+  }
+}
+```

@@ -1,0 +1,52 @@
+---
+title: Schema Package Overview
+description: How @graphql-suite/schema generates a complete GraphQL schema from Drizzle PostgreSQL tables
+---
+
+`@graphql-suite/schema` takes a Drizzle `PgDatabase` instance and produces a complete GraphQL schema at runtime. There is no code generation step — your Drizzle table definitions are the single source of truth.
+
+## What gets generated
+
+**Queries** are created for every included table:
+
+- **List query** — returns an array of rows with filtering, ordering, pagination, and offset support
+- **Single query** — returns one row by primary key or unique filter
+- **Count query** — returns the number of matching rows
+
+**Mutations** (when enabled) are created for every table that has mutations allowed:
+
+- **Insert** — insert one or many rows, with returning clause
+- **Insert single** — insert exactly one row
+- **Update** — update rows matching a filter
+- **Delete** — delete rows matching a filter
+
+**Relations** are resolved automatically based on your Drizzle `relations()` definitions. Nested selections traverse one-to-one and one-to-many relationships with configurable depth limits.
+
+## Additional capabilities
+
+- **Filters** — auto-generated filter input types with operators like `eq`, `ne`, `gt`, `lt`, `gte`, `lte`, `like`, `ilike`, `in`, `notIn`, `isNull`, plus `AND`/`OR` combinators
+- **Ordering** — order by any column, ascending or descending
+- **Pagination** — `limit` and `offset` arguments on list queries
+- **JSONB fields** — exposed as the `GraphQLJSON` scalar type
+- **Configurable naming** — control query/mutation suffixes to get natural names like `users`/`user` instead of `user`/`userSingle`
+- **Table exclusion** — remove auth or internal tables from the public schema
+- **Read-only tables** — generate queries but no mutations for specific tables
+- **Relation pruning** — omit, flatten, or restrict specific relation paths
+- **Hooks** — attach before/after/resolve lifecycle hooks to any operation
+- **Permissions** — apply per-table access rules at the schema level
+- **Debug logging** — inspect schema size and relation expansion tree
+
+## Key exports
+
+| Export | Description |
+| ------ | ----------- |
+| `buildSchema` | Main function. Takes a Drizzle db and returns a `GraphQLSchema` plus entities. |
+| `buildSchemaFromDrizzle` | Schema-only variant that needs no database connection. Creates stub resolvers. Useful for introspection, codegen, and testing. |
+| `buildEntities` | Returns the `GeneratedEntities` object (queries, mutations, inputs, types) without building a full schema. Useful for composing into an existing GraphQL schema. |
+| `SchemaBuilder` | The underlying class, exposed for advanced use cases. |
+| `GraphQLJSON` | Custom scalar for JSONB columns. |
+| `generateSDL` | Generate SDL string from a Drizzle schema (codegen utility). |
+| `generateTypes` | Generate TypeScript type definitions from a Drizzle schema (codegen utility). |
+| `generateEntityDefs` | Generate entity definition types for the client package. |
+| `permissive`, `readOnly`, `restricted` | Permission preset helpers. |
+| `mergeHooks`, `withRowSecurity` | Hook composition utilities. |

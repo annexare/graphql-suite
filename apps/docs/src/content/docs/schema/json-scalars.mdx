@@ -1,0 +1,56 @@
+---
+title: JSON Scalars
+description: How Drizzle jsonb columns are represented as GraphQL JSON scalars
+---
+
+Drizzle `jsonb()` columns are automatically mapped to the `GraphQLJSON` custom scalar type in the generated schema. This scalar accepts and returns arbitrary JSON values.
+
+## How it works
+
+When the schema builder encounters a `jsonb()` column in a Drizzle table, it uses the `JSON` scalar type instead of a standard GraphQL scalar:
+
+```ts
+import { jsonb, pgTable, text, uuid } from 'drizzle-orm/pg-core'
+
+export const article = pgTable('article', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  title: text('title').notNull(),
+  metadata: jsonb('metadata'), // Maps to JSON scalar
+})
+```
+
+This produces a GraphQL field of type `JSON`:
+
+```graphql
+scalar JSON
+
+type ArticleSelectItem {
+  id: String!
+  title: String!
+  metadata: JSON
+}
+```
+
+## The `GraphQLJSON` scalar
+
+The scalar handles serialization and parsing of JSON values in both directions:
+
+- **Serialization** — passes the value through as-is (objects, arrays, primitives, null)
+- **Parsing** — accepts any valid JSON value from variables or inline literals
+- **Literal parsing** — recursively parses GraphQL AST literals (objects, arrays, strings, numbers, booleans, null)
+
+## Using the scalar in custom schemas
+
+The `GraphQLJSON` scalar is exported from the schema package for use in custom schemas or extensions:
+
+```ts
+import { GraphQLJSON } from '@graphql-suite/schema'
+```
+
+## Filter behavior
+
+JSON columns support the same filter operators as other scalar types (`eq`, `ne`, `isNull`, `isNotNull`). Comparison operators like `lt`/`gt` are available but their behavior depends on PostgreSQL's JSONB comparison rules.
+
+:::note
+In generated TypeScript types, JSON fields are typed as `unknown` since their structure is not known at the schema level.
+:::

@@ -1,0 +1,100 @@
+---
+title: Mutations
+description: Insert, update, and delete operations on the EntityClient
+---
+
+The `EntityClient` provides type-safe mutation methods that build GraphQL mutations automatically. All mutation methods accept a `returning` parameter to specify which fields to include in the response.
+
+## `insert({ values, returning? })`
+
+Insert an array of rows. Returns the inserted rows.
+
+```ts
+const inserted = await client.entity('article').insert({
+  values: [
+    { title: 'First Article', authorId: 'user-1' },
+    { title: 'Second Article', authorId: 'user-2' },
+  ],
+  returning: { id: true, title: true, createdAt: true },
+})
+// Type: { id: string; title: string; createdAt: string }[]
+```
+
+The `values` parameter is typed as an array of the entity's insert input type. Required columns (non-nullable without defaults) must be provided.
+
+## `insertSingle({ values, returning? })`
+
+Insert a single row. Returns the inserted row or `null`.
+
+```ts
+const article = await client.entity('article').insertSingle({
+  values: { title: 'New Article', authorId: 'user-1' },
+  returning: { id: true, title: true },
+})
+// Type: { id: string; title: string } | null
+```
+
+## `update({ set, where?, returning? })`
+
+Update rows matching the `where` filter. Returns the updated rows.
+
+```ts
+const updated = await client.entity('article').update({
+  set: { title: 'Updated Title', updatedAt: new Date().toISOString() },
+  where: { id: { eq: articleId } },
+  returning: { id: true, title: true, updatedAt: true },
+})
+// Type: { id: string; title: string; updatedAt: string }[]
+```
+
+The `set` parameter is typed as the entity's update input type, where all fields are optional and nullable. Only provided fields are included in the GraphQL mutation.
+
+:::caution
+Omitting the `where` parameter updates all rows in the table.
+:::
+
+## `delete({ where?, returning? })`
+
+Delete rows matching the `where` filter. Returns the deleted rows.
+
+```ts
+const deleted = await client.entity('article').delete({
+  where: { id: { eq: articleId } },
+  returning: { id: true, title: true },
+})
+// Type: { id: string; title: string }[]
+```
+
+:::caution
+Omitting the `where` parameter deletes all rows in the table.
+:::
+
+## The `returning` parameter
+
+All mutation methods accept an optional `returning` parameter with the same shape as `select` in query methods. It determines which fields are included in the response and the TypeScript return type.
+
+```ts
+// Without returning — still returns results but with default fields
+const inserted = await client.entity('article').insert({
+  values: [{ title: 'Article' }],
+})
+
+// With returning — only selected fields in the result type
+const inserted = await client.entity('article').insert({
+  values: [{ title: 'Article' }],
+  returning: { id: true, title: true, author: { name: true } },
+})
+```
+
+Relations can be included in `returning` just like in query `select`:
+
+```ts
+const updated = await client.entity('article').update({
+  set: { categoryId: newCategoryId },
+  where: { id: { eq: articleId } },
+  returning: {
+    id: true,
+    category: { id: true, name: true },
+  },
+})
+```
