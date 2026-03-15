@@ -1,0 +1,103 @@
+---
+title: Building Schemas
+description: The three main functions for generating GraphQL schemas from Drizzle tables
+---
+
+The schema package provides three functions for different use cases. All accept the same `BuildSchemaConfig` options.
+
+## buildSchema
+
+The primary function. Pass a Drizzle database instance and get back a complete, executable GraphQL schema.
+
+```ts
+import { buildSchema } from '@graphql-suite/schema'
+import { drizzle } from 'drizzle-orm/bun-sql'
+import * as schema from './db/schema'
+
+const db = drizzle({ connection: process.env.DATABASE_URL!, schema })
+
+const { schema: graphqlSchema, entities, withPermissions, clearPermissionCache } = buildSchema(db, {
+  mutations: true,
+  suffixes: { list: 's', single: '' },
+})
+```
+
+**Returns:**
+
+| Property | Type | Description |
+| -------- | ---- | ----------- |
+| `schema` | `GraphQLSchema` | The executable schema, ready to pass to any GraphQL server. |
+| `entities` | `GeneratedEntities` | The raw queries, mutations, input types, and object types. |
+| `withPermissions` | `(permissions: PermissionConfig) => GraphQLSchema` | Returns a new schema with access control applied. |
+| `clearPermissionCache` | `(id?: string) => void` | Clears cached permission schemas. Call when a user's permissions change. |
+
+## buildSchemaFromDrizzle
+
+Builds a schema without a database connection. Creates a lightweight mock internally, so resolvers return empty data. This is ideal for:
+
+- Schema introspection and SDL export
+- Code generation pipelines
+- Testing schema shape without a running database
+
+```ts
+import { buildSchemaFromDrizzle } from '@graphql-suite/schema'
+import * as schema from './db/schema'
+
+const { schema: graphqlSchema, entities } = buildSchemaFromDrizzle(schema, {
+  mutations: true,
+  suffixes: { list: 's', single: '' },
+})
+```
+
+The function signature is the same as `buildSchema`, but the first argument is your Drizzle schema exports (`Record<string, unknown>`) instead of a database instance.
+
+:::caution
+Resolvers on the returned schema are stubs. Queries return empty arrays/null and mutations are no-ops. Do not use this for serving real requests.
+:::
+
+## buildEntities
+
+Returns only the `GeneratedEntities` object without constructing a `GraphQLSchema`. Use this when you want to compose the generated queries and mutations into an existing schema that you build manually.
+
+```ts
+import { buildEntities } from '@graphql-suite/schema'
+import { GraphQLObjectType, GraphQLSchema } from 'graphql'
+import { drizzle } from 'drizzle-orm/bun-sql'
+import * as schema from './db/schema'
+
+const db = drizzle({ connection: process.env.DATABASE_URL!, schema })
+const entities = buildEntities(db, {
+  mutations: true,
+  suffixes: { list: 's', single: '' },
+})
+
+// Compose into your own schema alongside custom fields
+const queryType = new GraphQLObjectType({
+  name: 'Query',
+  fields: {
+    ...entities.queries,
+    // your custom queries here
+    health: {
+      type: GraphQLString,
+      resolve: () => 'ok',
+    },
+  },
+})
+
+const schema = new GraphQLSchema({
+  query: queryType,
+  mutation: new GraphQLObjectType({
+    name: 'Mutation',
+    fields: entities.mutations,
+  }),
+})
+```
+
+**`GeneratedEntities` shape:**
+
+| Property | Type | Description |
+| -------- | ---- | ----------- |
+| `queries` | `Record<string, GraphQLFieldConfig>` | All generated query fields. |
+| `mutations` | `Record<string, GraphQLFieldConfig>` | All generated mutation fields. |
+| `inputs` | `Record<string, GraphQLInputObjectType>` | Filter, order, and insert input types. |
+| `types` | `Record<string, GraphQLObjectType>` | The generated object types for each table. |

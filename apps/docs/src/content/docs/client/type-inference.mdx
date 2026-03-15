@@ -1,0 +1,111 @@
+---
+title: Type Inference
+description: How types flow from your Drizzle schema through the client to fully-typed query results
+---
+
+The client package infers all types from your Drizzle schema at the TypeScript level. No code generation is needed — the type system does the work.
+
+## `InferEntityDefs<TSchema, TConfig>`
+
+The master inference type that produces entity definitions for every table in your schema.
+
+```ts
+import type { InferEntityDefs } from '@graphql-suite/client'
+import type { BuildSchemaConfig } from '@graphql-suite/schema'
+
+import * as schema from './db/schema'
+
+const config = {
+  limitRelationDepth: 3,
+  tables: { exclude: ['session', 'account'] },
+} as const satisfies BuildSchemaConfig
+
+type MyEntityDefs = InferEntityDefs<typeof schema, typeof config>
+```
+
+Each entity in the result contains:
+
+- `fields` — wire format type (Drizzle select type with `Date` converted to `string`)
+- `relations` — relation metadata with entity name and cardinality (`one` or `many`)
+- `filters` — filter type with all supported operators per column
+- `insertInput` — insert input type (Drizzle insert type in wire format)
+- `updateInput` — update input type (all fields optional and nullable)
+- `orderBy` — ordering type with column names
+
+### Config influence
+
+- `tables.exclude` removes entities from the inferred type
+- `limitRelationDepth` controls how deep relation filters recurse (capped at 5 to prevent excessive type expansion)
+
+:::note
+Use `as const satisfies BuildSchemaConfig` on your config object to ensure TypeScript narrows the literal types. Without `as const`, `limitRelationDepth` is widened to `number` and the filter depth defaults to 1.
+:::
+
+## `InferResult<TDefs, TEntity, TSelect>`
+
+Computes the return type of a query based on the `select` shape. Only selected fields appear in the result type.
+
+```ts
+import type { InferResult } from '@graphql-suite/client'
+
+// Given a select shape:
+type ArticleSelect = { id: true; title: true; author: { name: true } }
+
+// The result type would be:
+type Result = InferResult<MyEntityDefs, MyEntityDefs['article'], ArticleSelect>
+// { id: string; title: string; author: { name: string } | null }
+```
+
+The inference rules:
+
+- Scalar fields selected with `true` are included with their wire format type
+- One-to-one relations are typed as `T | null` (always nullable)
+- One-to-many relations are typed as `T[]`
+- Unselected fields are excluded from the result type
+
+## `SelectInput<TDefs, TEntity>`
+
+Constrains the `select` parameter to valid fields and relations for the given entity.
+
+- Scalar fields accept `true`
+- Relation fields accept a nested `SelectInput` for the related entity
+- Invalid field names produce a type error
+
+```ts
+// Valid
+const select = { id: true, title: true, author: { name: true } }
+
+// Type error: 'nonExistent' is not a valid field
+const select = { id: true, nonExistent: true }
+```
+
+## Wire format
+
+GraphQL serializes `Date` values as ISO strings. The wire format type reflects this:
+
+```ts
+// Drizzle type
+type Article = { id: string; createdAt: Date; title: string }
+
+// Wire format (what the client receives)
+type ArticleWire = { id: string; createdAt: string; title: string }
+```
+
+This conversion is handled automatically by the `InferEntityDefs` type. All `Date` fields become `string` in the inferred types.
+
+## Extracting types for external use
+
+You can extract specific entity types for use outside the client:
+
+```ts
+type MyEntityDefs = InferEntityDefs<typeof schema, typeof config>
+
+// Extract the article wire type
+type Article = MyEntityDefs['article']['fields']
+
+// Extract article filters
+type ArticleFilters = MyEntityDefs['article']['filters']
+
+// Extract article insert input
+type ArticleInsert = MyEntityDefs['article']['insertInput']
+```

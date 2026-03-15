@@ -1,0 +1,72 @@
+---
+title: Query Package Overview
+description: React hooks wrapping TanStack Query for the Drizzle GraphQL Suite client
+---
+
+`@graphql-suite/query` provides React hooks that connect `@graphql-suite/client` to [TanStack Query](https://tanstack.com/query). You get automatic caching, background refetching, and cache invalidation on mutations without writing any of the plumbing yourself.
+
+## What it provides
+
+### Context
+
+- **`GraphQLProvider`** — React context provider that makes the GraphQL client available to all hooks
+- **`useGraphQLClient()`** — returns the client from context for raw `client.execute()` calls
+
+### Query hooks
+
+| Hook | Purpose |
+| ---- | ------- |
+| `useEntityQuery` | Fetch a single entity by filter |
+| `useEntityList` | Fetch a list with filtering, ordering, and pagination |
+| `useEntityInfiniteQuery` | Infinite-scroll pagination with automatic page tracking |
+
+All query hooks return the standard TanStack Query result object (`data`, `isPending`, `error`, `refetch`, etc.).
+
+### Mutation hooks
+
+| Hook | Purpose |
+| ---- | ------- |
+| `useEntityInsert` | Insert one or more rows |
+| `useEntityUpdate` | Update rows matching a filter |
+| `useEntityDelete` | Delete rows matching a filter |
+
+Mutation hooks automatically invalidate cached queries after a successful mutation by default. You can control this with the `invalidate` and `invalidateKey` options.
+
+### Utility hooks
+
+| Hook | Purpose |
+| ---- | ------- |
+| `useEntity` | Obtain an entity client from the provider context by name |
+| `useGraphQLClient` | Access the underlying `GraphQLClient` for raw queries |
+
+## Peer dependencies
+
+```
+@graphql-suite/client
+@tanstack/react-query >= 5
+react >= 18
+```
+
+## Quick example
+
+```tsx
+import { useEntityList } from '@graphql-suite/query'
+
+function ArticleList() {
+  const { data, isPending } = useEntityList(articleEntity, {
+    select: { id: true, title: true, author: { name: true } },
+    orderBy: { column: 'createdAt', direction: 'desc' },
+    limit: 10,
+  })
+
+  if (isPending) return <p>Loading...</p>
+
+  return (
+    <ul>
+      {data?.map((article) => (
+        <li key={article.id}>{article.title} — {article.author?.name}</li>
+      ))}
+    </ul>
+  )
+}
+```

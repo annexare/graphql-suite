@@ -1,0 +1,137 @@
+---
+title: Testing
+description: How to test GraphQL schemas and React components without a database
+---
+
+The suite is designed so that you never need a running database to test schema generation, introspection, or component rendering.
+
+## Schema introspection tests
+
+Use `buildSchemaFromDrizzle` to build a full GraphQL schema from your Drizzle table definitions. No database connection or `.env` file is required — the function creates stub resolvers internally.
+
+```ts
+import { printSchema } from 'graphql'
+import { describe, expect, test } from 'bun:test'
+import { buildSchemaFromDrizzle } from '@graphql-suite/schema'
+import * as schema from './db'
+
+const config = { mutations: true, limitRelationDepth: 2 }
+const { schema: gqlSchema, entities } = buildSchemaFromDrizzle(schema, config)
+
+describe('GraphQL schema', () => {
+  test('generates article query type', () => {
+    const queryType = gqlSchema.getQueryType()
+    expect(queryType?.getFields().articles).toBeDefined()
+  })
+
+  test('generates insert mutation', () => {
+    const mutationType = gqlSchema.getMutationType()
+    expect(mutationType?.getFields().insertArticle).toBeDefined()
+  })
+
+  test('SDL contains expected types', () => {
+    const sdl = printSchema(gqlSchema)
+    expect(sdl).toContain('type ArticleSelectItem')
+  })
+})
+```
+
+## E2E tests with mock DB
+
+For testing actual GraphQL query execution, create a mock database that returns seed data, build a real schema from it, and run queries against it using a GraphQL server like `graphql-yoga`:
+
+```ts
+import { describe, expect, test } from 'bun:test'
+import { buildSchema } from '@graphql-suite/schema'
+import { createYoga } from 'graphql-yoga'
+
+function createSeededMockDb(drizzleSchema, tables, tableNamesMap) {
+  const seedData = {
+    article: [
+      { id: '1', title: 'First' },
+      { id: '2', title: 'Second' },
+      { id: '3', title: 'Third' },
+    ],
+  }
+
+  const query = Object.fromEntries(
+    Object.keys(tables).map((name) => [
+      name,
+      {
+        findMany: () => Promise.resolve(seedData[name] ?? []),
+        findFirst: () => Promise.resolve(seedData[name]?.[0] ?? null),
+      },
+    ]),
+  )
+
+  return {
+    _: { fullSchema: drizzleSchema, schema: tables, tableNamesMap },
+    query,
+    select: () => ({ from: () => ({ where: () => ({}) }) }),
+  }
+}
+
+// biome-ignore lint/suspicious/noExplicitAny: mock db for testing
+const mockDb = createSeededMockDb(schema, tables, tableNamesMap) as any
+const { schema: gqlSchema } = buildSchema(mockDb, config)
+const yoga = createYoga({ schema: gqlSchema })
+
+test('fetches articles', async () => {
+  const res = await yoga.fetch(
+    new Request('http://test/graphql', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: '{ articles { title } }' }),
+    }),
+  )
+  const json = await res.json()
+  expect(json.data.articles).toHaveLength(3)
+})
+```
+
+## Component tests with linkedom
+
+For testing React components that use the query hooks, set up a DOM environment with `linkedom` and mock the GraphQL client.
+
+```ts
+import { describe, expect, mock, test } from 'bun:test'
+import { parseHTML } from 'linkedom'
+import { act, createRoot } from 'react-dom/client'
+import { renderToString } from 'react-dom/server'
+import { createElement } from 'react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { GraphQLProvider } from '@graphql-suite/query'
+
+// Set up DOM globals
+const { document, window } = parseHTML('<!DOCTYPE html><html><body></body></html>')
+globalThis.document = document
+globalThis.window = window
+
+// Create a mock client
+const mockClient = {
+  entity: mock(() => ({
+    query: mock(() => Promise.resolve([])),
+    querySingle: mock(() => Promise.resolve(null)),
+    count: mock(() => Promise.resolve(0)),
+  })),
+  execute: mock(() => Promise.resolve({})),
+}
+
+function renderWithProviders(component) {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  })
+
+  return renderToString(
+    createElement(
+      QueryClientProvider,
+      { client: queryClient },
+      createElement(GraphQLProvider, { client: mockClient }, component),
+    ),
+  )
+}
+```
+
+:::tip
+Use `renderToString` for quick snapshot-style tests. For tests that need to observe hook state transitions (loading, success, error), use `createRoot` with `act()` and await the query settlement.
+:::

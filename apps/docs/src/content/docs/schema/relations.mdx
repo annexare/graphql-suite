@@ -1,0 +1,106 @@
+---
+title: Relations & Depth
+description: How Drizzle relations map to GraphQL nested types, and how to control relation expansion depth and pruning
+---
+
+The schema builder automatically discovers Drizzle relations and generates nested GraphQL object types for them. Each relation becomes a field on its parent type, with its own scalar fields and (optionally) further nested relations.
+
+## How relations map to GraphQL types
+
+When you define Drizzle relations, the schema builder creates corresponding GraphQL types:
+
+- **One-to-one / many-to-one** relations become a nullable object field on the parent type
+- **One-to-many** relations become a non-null list field on the parent type
+
+```ts
+// Drizzle schema
+export const articleRelations = relations(article, ({ one, many }) => ({
+  author: one(user, { fields: [article.authorId], references: [user.id] }),
+  comments: many(comment),
+}))
+```
+
+This produces GraphQL fields like:
+
+```graphql
+type ArticleSelectItem {
+  id: String!
+  title: String!
+  author: UserSelectItem          # nullable object
+  comments: [CommentSelectItem!]! # non-null list
+}
+```
+
+## Controlling relation depth
+
+Each level of relation expansion multiplies the number of generated types. Two config options control how deep the schema expands.
+
+### `limitRelationDepth`
+
+Controls the maximum number of levels of nested relations in the generated schema. Defaults to `3` on the server and `1` for client filter types.
+
+```ts
+const config = {
+  limitRelationDepth: 3,
+}
+```
+
+Set to `0` to omit relations entirely.
+
+### `limitSelfRelationDepth`
+
+Controls how many times the same table can appear in a single type path via direct self-references (e.g., `comment.parent` pointing back to `comment`). Defaults to `1`.
+
+- At depth `1`, self-relation fields are omitted entirely
+- At depth `2`, one level of self-relation expansion is allowed (the nested type has no further self-relation fields)
+
+```ts
+const config = {
+  limitSelfRelationDepth: 2,
+}
+```
+
+Cross-table cycles that revisit a table are governed by `limitRelationDepth` instead.
+
+### Impact on schema size
+
+Measurements from a news application schema show how depth affects the generated schema:
+
+| Depth | Types | SDL Size |
+|-------|-------|----------|
+| 2 | ~450 | ~138 KB |
+| 3 | ~1,100 | ~372 KB |
+| 5 | ~8,900 | ~3,500 KB |
+
+:::caution
+Higher depth values can produce very large schemas. Start with the default depth of 3 and increase only if your application needs deeper nesting.
+:::
+
+## Pruning relations
+
+The `pruneRelations` config provides fine-grained control over individual relations. Keys use the `tableName.relationName` format.
+
+### Available rules
+
+- **`false`** — omit the relation field entirely from the parent type
+- **`'leaf'`** — expand the relation with scalar columns only (no nested relations)
+- **`{ only: ['fieldName'] }`** — expand the relation with only the listed child relation fields
+
+```ts
+const config = {
+  pruneRelations: {
+    // Remove the back-reference completely
+    'assetType.assets': false,
+
+    // Show override.asset but don't expand its relations
+    'override.asset': 'leaf',
+
+    // Only keep selectedVariant on attribute.asset
+    'attribute.asset': { only: ['selectedVariant'] },
+  },
+}
+```
+
+:::tip
+Use `pruneRelations` to remove back-references and other relations that inflate the schema without adding value for your API consumers.
+:::

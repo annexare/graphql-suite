@@ -1,0 +1,116 @@
+---
+title: Code Generation
+description: Generate GraphQL SDL, TypeScript types, and entity definitions from your built schema
+---
+
+The schema package provides three code generation functions for producing static artifacts from a built GraphQL schema. These are useful for generating type files, SDL for tooling, and entity definitions for the client package.
+
+## `generateSDL(schema)`
+
+Produces a GraphQL SDL (Schema Definition Language) string from the built schema.
+
+```ts
+import { buildSchema, generateSDL } from '@graphql-suite/schema'
+
+const { schema } = buildSchema(db, config)
+const sdl = generateSDL(schema)
+
+// Write to file for use with GraphQL tooling
+await Bun.write('schema.graphql', sdl)
+```
+
+## `generateTypes(schema, options?)`
+
+Produces TypeScript type definitions including:
+
+- **Wire format types** — Drizzle types with `Date` fields converted to `string` (matching GraphQL serialization)
+- **Filter types** — per-entity filter types with all supported operators
+- **Input types** — insert and update input types for mutations
+- **OrderBy types** — per-entity ordering types
+
+```ts
+import { buildSchema, generateTypes } from '@graphql-suite/schema'
+
+const { schema } = buildSchema(db, config)
+const types = generateTypes(schema, {
+  drizzle: {
+    importPath: '@/db/schema',
+  },
+})
+
+await Bun.write('generated/types.ts', types)
+```
+
+### Options
+
+```ts
+type CodegenOptions = {
+  drizzle?: {
+    /** Import path for Drizzle schema types (e.g. '@/db/schema') */
+    importPath: string
+    /** Override mapping: Drizzle table name to export type name */
+    typeNames?: Record<string, string>
+  }
+}
+```
+
+When `drizzle.importPath` is provided, the generated wire types import from your Drizzle schema and convert `Date` fields to `string`. Without it, wire types fall back to `Record<string, unknown>`.
+
+The `drizzle.typeNames` option lets you override the mapping between table names and Drizzle export type names, which is useful when the Drizzle type name does not match the capitalized table name:
+
+```ts
+const types = generateTypes(schema, {
+  drizzle: {
+    importPath: '@/db/schema',
+    typeNames: {
+      overrideToAsset: 'OverrideAsset',
+    },
+  },
+})
+```
+
+## `generateEntityDefs(schema, options?)`
+
+Produces entity definitions and a runtime schema object for the client package. The output includes:
+
+- A `schema` const with query/mutation names, fields, and relation metadata
+- An `EntityDefs` type for client-side type inference
+- A `TableNameMap` type mapping Drizzle type names to entity keys
+
+```ts
+import { buildSchema, generateEntityDefs } from '@graphql-suite/schema'
+
+const { schema } = buildSchema(db, config)
+const entityDefs = generateEntityDefs(schema, {
+  drizzle: {
+    importPath: '@/db/schema',
+  },
+})
+
+await Bun.write('generated/entity-defs.ts', entityDefs)
+```
+
+:::tip
+The `generateEntityDefs` output is designed to be used with the client package as an alternative to runtime type inference. This is helpful for projects that prefer generated code or need to share entity definitions between packages.
+:::
+
+## Schema from Drizzle exports (no database needed)
+
+For code generation, you typically do not need a live database connection. Use `buildSchemaFromDrizzle` to build a schema directly from your Drizzle schema exports:
+
+```ts
+import {
+  buildSchemaFromDrizzle,
+  generateEntityDefs,
+  generateSDL,
+  generateTypes,
+} from '@graphql-suite/schema'
+
+import * as drizzleSchema from './db/schema'
+
+const { schema } = buildSchemaFromDrizzle(drizzleSchema, config)
+
+await Bun.write('schema.graphql', generateSDL(schema))
+await Bun.write('generated/types.ts', generateTypes(schema, options))
+await Bun.write('generated/entity-defs.ts', generateEntityDefs(schema, options))
+```

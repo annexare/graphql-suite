@@ -1,0 +1,101 @@
+---
+title: Mutations
+description: Mutation hooks for inserting, updating, and deleting entities
+---
+
+The mutation hooks wrap TanStack Query's `useMutation` and handle cache invalidation automatically.
+
+## useEntityInsert
+
+Inserts one or more rows. The `values` parameter accepts an array of insert objects.
+
+```tsx
+import { useEntityInsert } from '@graphql-suite/query'
+
+const { mutate, isPending } = useEntityInsert(articleEntity, { id: true, title: true })
+
+// Insert a single row
+mutate({
+  values: [{ title: 'New Article', authorId: userId, status: 'draft' }],
+})
+```
+
+**Signature:** `useEntityInsert(entity, returning?, options?)`
+
+| Parameter | Type | Description |
+| --------- | ---- | ----------- |
+| `entity` | `EntityClient` | The entity client to insert into |
+| `returning` | select object | Optional fields to return from inserted rows |
+| `options` | mutation options | Optional callbacks and cache settings |
+
+The `mutate` function accepts `{ values: InsertInput[] }`.
+
+## useEntityUpdate
+
+Updates rows matching a filter.
+
+```tsx
+import { useEntityUpdate } from '@graphql-suite/query'
+
+const { mutate } = useEntityUpdate(articleEntity, { id: true, title: true })
+
+mutate({
+  set: { status: 'published', publishedAt: new Date().toISOString() },
+  where: { id: { eq: articleId } },
+})
+```
+
+**Signature:** `useEntityUpdate(entity, returning?, options?)`
+
+The `mutate` function accepts `{ set: UpdateInput, where?: FilterInput }`.
+
+## useEntityDelete
+
+Deletes rows matching a filter.
+
+```tsx
+import { useEntityDelete } from '@graphql-suite/query'
+
+const { mutate } = useEntityDelete(articleEntity, { id: true })
+
+mutate({ where: { id: { eq: articleId } } })
+```
+
+**Signature:** `useEntityDelete(entity, returning?, options?)`
+
+The `mutate` function accepts `{ where?: FilterInput }`.
+
+## Options
+
+All three mutation hooks accept the same options object as their third parameter:
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `invalidate` | `boolean` | `true` | Invalidate cached queries after success |
+| `invalidateKey` | `unknown[]` | `['gql']` | Query key prefix to invalidate |
+| `onSuccess` | `(data) => void` | — | Callback after successful mutation |
+| `onError` | `(error) => void` | — | Callback on mutation error |
+
+## Cache invalidation
+
+By default, after a successful mutation, all TanStack Query caches with the `['gql']` prefix are invalidated. This causes any active `useEntityList`, `useEntityQuery`, and `useEntityInfiniteQuery` hooks to refetch.
+
+To disable automatic invalidation:
+
+```tsx
+const { mutate } = useEntityInsert(articleEntity, { id: true }, {
+  invalidate: false,
+})
+```
+
+To invalidate a narrower set of queries, provide a more specific key:
+
+```tsx
+const { mutate } = useEntityUpdate(articleEntity, { id: true }, {
+  invalidateKey: ['gql', 'list'],
+})
+```
+
+:::tip
+If you are performing multiple mutations in sequence, disable invalidation on all but the last one to avoid unnecessary refetches.
+:::

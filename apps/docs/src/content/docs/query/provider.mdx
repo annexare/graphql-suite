@@ -1,0 +1,67 @@
+---
+title: Provider Setup
+description: Setting up GraphQLProvider and QueryClientProvider for React hooks
+---
+
+Before using any query or mutation hooks, you need to wrap your application with both TanStack Query's `QueryClientProvider` and the suite's `GraphQLProvider`.
+
+## Setup
+
+```tsx
+import { createDrizzleClient } from '@graphql-suite/client'
+import { GraphQLProvider, useGraphQLClient } from '@graphql-suite/query'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+
+import * as schema from './db/schema'
+import { config } from './db/config'
+
+const client = createDrizzleClient({ schema, config, url: '/graphql' })
+const queryClient = new QueryClient()
+
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <GraphQLProvider client={client}>
+        <YourApp />
+      </GraphQLProvider>
+    </QueryClientProvider>
+  )
+}
+```
+
+:::note
+`QueryClientProvider` must wrap `GraphQLProvider` because the mutation hooks use `useQueryClient()` internally for cache invalidation.
+:::
+
+## GraphQLProvider
+
+The `GraphQLProvider` component accepts a single `client` prop — an instance of `GraphQLClient` created by either `createDrizzleClient` or `createClient`.
+
+```tsx
+<GraphQLProvider client={client}>
+  {children}
+</GraphQLProvider>
+```
+
+All hooks in the `@graphql-suite/query` package read from this context.
+
+## useGraphQLClient
+
+Returns the `GraphQLClient` instance from the nearest `GraphQLProvider`. Throws if called outside the provider tree.
+
+```tsx
+function DebugPanel() {
+  const client = useGraphQLClient()
+
+  async function runRawQuery() {
+    const data = await client.execute(`
+      query { articles { id title } }
+    `)
+    console.log(data)
+  }
+
+  return <button onClick={runRawQuery}>Run raw query</button>
+}
+```
+
+This is useful when you need to run a one-off query that does not fit the entity hook pattern, or when building custom abstractions on top of the client.

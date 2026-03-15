@@ -1,0 +1,123 @@
+---
+title: Entity Client
+description: Query and count operations on the EntityClient for reading data
+---
+
+The `EntityClient` is accessed via `client.entity('tableName')` and provides type-safe methods for querying data. All methods return promises and build GraphQL queries automatically from the parameters you provide.
+
+## `query(params)`
+
+Returns an array of results matching the given parameters.
+
+```ts
+const articles = await client.entity('article').query({
+  select: { id: true, title: true, author: { name: true } },
+  where: { status: { eq: 'published' } },
+  orderBy: { createdAt: { direction: 'desc', priority: 1 } },
+  limit: 10,
+  offset: 0,
+})
+// Type: { id: string; title: string; author: { name: string } | null }[]
+```
+
+### Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `select` | `SelectInput` | Yes | Fields and relations to include in the result |
+| `where` | Entity filters | No | Filter conditions |
+| `orderBy` | Entity orderBy | No | Ordering specification |
+| `limit` | `number` | No | Maximum number of results |
+| `offset` | `number` | No | Number of results to skip |
+
+## `querySingle(params)`
+
+Returns a single result or `null`. Accepts the same parameters as `query` except `limit`.
+
+```ts
+const article = await client.entity('article').querySingle({
+  select: { id: true, title: true, content: true },
+  where: { id: { eq: articleId } },
+})
+// Type: { id: string; title: string; content: string } | null
+```
+
+## `count(params?)`
+
+Returns the number of matching rows. Accepts an optional `where` filter.
+
+```ts
+const total = await client.entity('article').count({
+  where: { status: { eq: 'published' } },
+})
+// Type: number
+```
+
+## The `select` parameter
+
+The `select` parameter determines both the GraphQL query fields and the TypeScript return type. Only selected fields appear in the response type.
+
+### Selecting scalar fields
+
+Use `true` to include a scalar field:
+
+```ts
+const articles = await client.entity('article').query({
+  select: { id: true, title: true },
+})
+// Type: { id: string; title: string }[]
+```
+
+### Selecting relations
+
+Use a nested object to include relation fields:
+
+```ts
+const articles = await client.entity('article').query({
+  select: {
+    id: true,
+    title: true,
+    author: { id: true, name: true },       // one-to-one: { ... } | null
+    comments: { id: true, body: true },       // one-to-many: { ... }[]
+  },
+})
+```
+
+One-to-one relations are always typed as nullable (`T | null`) because a matching row may not exist. One-to-many relations are typed as arrays.
+
+## The `where` parameter
+
+Filter conditions use per-column operator objects:
+
+```ts
+const articles = await client.entity('article').query({
+  select: { id: true },
+  where: {
+    status: { eq: 'published' },
+    createdAt: { gte: '2024-01-01' },
+    title: { ilike: '%graphql%' },
+    OR: [
+      { authorId: { eq: 'user-1' } },
+      { authorId: { eq: 'user-2' } },
+    ],
+  },
+})
+```
+
+Available operators: `eq`, `ne`, `lt`, `lte`, `gt`, `gte`, `like`, `notLike`, `ilike`, `notIlike`, `inArray`, `notInArray`, `isNull`, `isNotNull`.
+
+## The `orderBy` parameter
+
+Ordering uses column names with direction and priority:
+
+```ts
+const articles = await client.entity('article').query({
+  select: { id: true, title: true },
+  orderBy: {
+    createdAt: { direction: 'desc', priority: 1 },
+    title: { direction: 'asc', priority: 2 },
+  },
+})
+```
+
+The `priority` field determines sort order when multiple columns are specified (lower values are applied first).

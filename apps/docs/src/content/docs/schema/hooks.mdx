@@ -1,0 +1,139 @@
+---
+title: Hooks
+description: Lifecycle hooks for intercepting and customizing GraphQL query and mutation resolvers
+---
+
+Hooks let you intercept resolver execution to add authorization checks, default filters, logging, result transformation, or completely replace the default resolver logic.
+
+## Hook types
+
+Each table operation supports one of two hook patterns:
+
+### before / after hooks
+
+Run code before and/or after the default resolver.
+
+- **`before`** — runs before the resolver. Can modify `args` or short-circuit by returning `data` directly.
+- **`after`** — runs after the resolver. Can transform the result before it is returned.
+
+### resolve hooks
+
+Replace the default resolver entirely. The original resolver is available via `ctx.defaultResolve()` if you need to call it.
+
+:::note
+You cannot combine `before`/`after` with `resolve` on the same operation. Use one pattern or the other.
+:::
+
+## Supported operations
+
+Hooks can be attached to any of the following operations:
+
+- `query` — list query
+- `querySingle` — single-item query
+- `count` — count query
+- `insert` — batch insert mutation
+- `insertSingle` — single insert mutation
+- `update` — update mutation
+- `delete` — delete mutation
+
+## Examples
+
+### Adding a default filter with a before hook
+
+```ts
+const config = {
+  hooks: {
+    article: {
+      query: {
+        before: async (ctx) => {
+          // Add default filter
+          return { args: { ...ctx.args, where: { status: { eq: 'published' } } } }
+        },
+      },
+    },
+  },
+}
+```
+
+### Logging with an after hook
+
+```ts
+const config = {
+  hooks: {
+    article: {
+      insert: {
+        after: async (ctx) => {
+          // Log the insertion
+          console.log('Article inserted:', ctx.result)
+          return ctx.result
+        },
+      },
+    },
+  },
+}
+```
+
+### Replacing the resolver entirely
+
+```ts
+const config = {
+  hooks: {
+    article: {
+      query: {
+        resolve: async (ctx) => {
+          // Add custom logic before the default resolver
+          const modifiedArgs = { ...ctx.args, where: { status: { eq: 'published' } } }
+
+          // Call the default resolver with modified args
+          return ctx.defaultResolve(modifiedArgs)
+        },
+      },
+    },
+  },
+}
+```
+
+### Short-circuiting with before hook data
+
+If a `before` hook returns a `data` property, the resolver is skipped and the data is returned directly.
+
+```ts
+const config = {
+  hooks: {
+    article: {
+      querySingle: {
+        before: async (ctx) => {
+          const cached = await cache.get(ctx.args.where?.id?.eq)
+          if (cached) {
+            return { data: cached } // Skip resolver, return cached data
+          }
+          return undefined // Proceed with default resolver
+        },
+      },
+    },
+  },
+}
+```
+
+## Hook context types
+
+| Type | Properties | Used in |
+|------|------------|---------|
+| `HookContext` | `args`, `context`, `info` | `before` hooks |
+| `AfterHookContext` | `result`, `beforeData`, `context`, `info` | `after` hooks |
+| `ResolveHookContext` | `args`, `context`, `info`, `defaultResolve` | `resolve` hooks |
+
+### Function signatures
+
+```ts
+type BeforeHookFn = (ctx: HookContext) =>
+  Promise<BeforeHookResult | undefined> | BeforeHookResult | undefined
+
+type AfterHookFn = (ctx: AfterHookContext) => Promise<any> | any
+
+type ResolveHookFn = (ctx: ResolveHookContext) => Promise<any> | any
+```
+
+The `BeforeHookResult` type has two optional properties:
+- `args` — modified resolver arguments (passed to the resolver or the next hook)
+- `data` — if provided, short-circuits the resolver and returns this data

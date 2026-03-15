@@ -1,0 +1,243 @@
+---
+title: Client API Reference
+description: Complete API reference for @graphql-suite/client
+---
+
+## Functions
+
+### createDrizzleClient
+
+```ts
+function createDrizzleClient<
+  TSchema extends Record<string, unknown>,
+  const TConfig extends BuildSchemaConfig,
+>(
+  options: DrizzleClientConfig<TSchema, TConfig>,
+): GraphQLClient<SchemaDescriptor, InferEntityDefs<TSchema, TConfig>>
+```
+
+Creates a type-safe GraphQL client by inferring entity definitions from your Drizzle schema and config. This is the recommended way to create a client.
+
+```ts
+import { createDrizzleClient } from '@graphql-suite/client'
+import * as schema from './db/schema'
+
+const client = createDrizzleClient({
+  schema,
+  config: { mutations: true, limitRelationDepth: 2, suffixes: { list: 's', single: '' } },
+  url: '/graphql',
+  headers: () => ({ Authorization: `Bearer ${getToken()}` }),
+})
+```
+
+### createClient
+
+```ts
+function createClient<
+  TSchema extends SchemaDescriptor,
+  TDefs extends AnyEntityDefs = AnyEntityDefs,
+>(config: ClientConfig<TSchema>): GraphQLClient<TSchema, TDefs>
+```
+
+Creates a client from a pre-built schema descriptor. Use this when you have a generated schema descriptor rather than raw Drizzle schema exports.
+
+### buildSchemaDescriptor
+
+```ts
+function buildSchemaDescriptor(
+  schema: Record<string, unknown>,
+  config?: BuildSchemaConfig,
+): SchemaDescriptor
+```
+
+Builds a runtime schema descriptor from Drizzle schema exports. The descriptor maps entity names to their query/mutation names and field/relation metadata. Used internally by `createDrizzleClient`.
+
+## Classes
+
+### GraphQLClient
+
+```ts
+class GraphQLClient<TSchema extends SchemaDescriptor, TDefs extends AnyEntityDefs> {
+  constructor(config: ClientConfig<TSchema>)
+  entity<TEntityName extends string & keyof TSchema & keyof TDefs>(
+    entityName: TEntityName,
+  ): EntityClient<EntityDefsRef<TDefs>, TEntityName>
+  execute(
+    query: string,
+    variables?: Record<string, unknown>,
+  ): Promise<Record<string, unknown>>
+}
+```
+
+**`entity(name)`** — returns a typed entity client for the given entity name. The entity client provides `query`, `querySingle`, `count`, `insert`, `update`, and `delete` methods.
+
+**`execute(query, variables)`** — executes a raw GraphQL query string. Returns the `data` field from the response. Throws `GraphQLClientError` on GraphQL errors or `NetworkError` on transport failures.
+
+### GraphQLClientError
+
+```ts
+class GraphQLClientError extends Error {
+  readonly errors: GraphQLErrorEntry[]
+  readonly status: number
+  constructor(errors: GraphQLErrorEntry[], status?: number)
+}
+```
+
+Thrown when the GraphQL response contains errors. The `errors` array contains the individual error entries from the response. The `status` is the HTTP status code.
+
+### NetworkError
+
+```ts
+class NetworkError extends Error {
+  readonly status: number
+  constructor(message: string, status: number)
+}
+```
+
+Thrown when the HTTP request fails (non-2xx status) or the network is unreachable. `status` is `0` when the request could not be sent at all.
+
+## Types
+
+### ClientConfig
+
+```ts
+type ClientConfig<TSchema extends SchemaDescriptor = SchemaDescriptor> = {
+  url: string | (() => string)
+  schema: TSchema
+  headers?: HeadersInit | (() => HeadersInit | Promise<HeadersInit>)
+}
+```
+
+### DrizzleClientConfig
+
+```ts
+type DrizzleClientConfig<
+  TSchema extends Record<string, unknown>,
+  TConfig extends BuildSchemaConfig,
+> = {
+  schema: TSchema
+  config: TConfig
+  url: string | (() => string)
+  headers?: HeadersInit | (() => HeadersInit | Promise<HeadersInit>)
+}
+```
+
+### EntityClient
+
+The entity client returned by `client.entity(name)`. Provides typed methods for CRUD operations:
+
+- `query(params)` — fetch a list of entities
+- `querySingle(params)` — fetch a single entity
+- `count(params)` — count matching entities
+- `insert(params)` — insert rows
+- `update(params)` — update rows
+- `delete(params)` — delete rows
+
+### EntityDef
+
+```ts
+type EntityDef = {
+  fields: Record<string, unknown>
+  relations: Record<string, RelationDef>
+  filters?: Record<string, unknown>
+  insertInput?: Record<string, unknown>
+  updateInput?: Record<string, unknown>
+  orderBy?: Record<string, unknown>
+}
+```
+
+### AnyEntityDefs
+
+```ts
+type AnyEntityDefs = Record<string, EntityDef>
+```
+
+### EntityDefsRef
+
+```ts
+interface EntityDefsRef<TDefs extends AnyEntityDefs> {
+  readonly __defs: TDefs
+}
+```
+
+Opaque wrapper that prevents TypeScript from expanding entity defs during serialization.
+
+### EntityDescriptor
+
+```ts
+type EntityDescriptor = {
+  queryName: string
+  queryListName: string
+  countName: string
+  insertName: string
+  insertSingleName: string
+  updateName: string
+  deleteName: string
+  fields: readonly string[]
+  relations: Record<string, { entity: string; type: 'one' | 'many' }>
+}
+```
+
+### SchemaDescriptor
+
+```ts
+type SchemaDescriptor = Record<string, EntityDescriptor>
+```
+
+### SelectInput
+
+```ts
+type SelectInput<TDefs extends AnyEntityDefs, TEntity extends EntityDef> = {
+  [K in keyof TEntity['fields'] | keyof TEntity['relations']]?: /* true for scalars, nested SelectInput for relations */
+}
+```
+
+Maps field names to `true` (for scalar selection) or nested select objects (for relation traversal).
+
+### InferResult
+
+```ts
+type InferResult<TDefs extends AnyEntityDefs, TEntity extends EntityDef, TSelect> = {
+  /* scalar fields + relation fields based on TSelect */
+}
+```
+
+Infers the TypeScript return type from a select object. Scalar fields are picked directly from the entity's `fields` type. Relations are resolved recursively.
+
+### InferEntityDefs
+
+```ts
+type InferEntityDefs<TSchema, TConfig extends BuildSchemaConfig> = /* inferred entity defs */
+```
+
+Infers the complete entity definitions type from a Drizzle schema and config. Used internally by `createDrizzleClient`.
+
+### RelationDef
+
+```ts
+type RelationDef = {
+  entity: string
+  type: 'one' | 'many'
+  required?: boolean
+}
+```
+
+### GraphQLErrorEntry
+
+```ts
+type GraphQLErrorEntry = {
+  message: string
+  locations?: GraphQLErrorLocation[]
+  path?: (string | number)[]
+  extensions?: Record<string, unknown>
+}
+```
+
+### GraphQLErrorLocation
+
+```ts
+type GraphQLErrorLocation = {
+  line: number
+  column: number
+}
+```

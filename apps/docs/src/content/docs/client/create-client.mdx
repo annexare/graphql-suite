@@ -1,0 +1,89 @@
+---
+title: Creating a Client
+description: Two ways to create a type-safe GraphQL client — from a Drizzle schema or with a manual schema descriptor
+---
+
+There are two ways to create a client, depending on whether your Drizzle schema is available at the call site.
+
+## `createDrizzleClient` (recommended)
+
+Infers all entity types directly from your Drizzle schema and config. This is the recommended approach when the Drizzle schema is importable.
+
+```ts
+import { createDrizzleClient } from '@graphql-suite/client'
+
+import * as schema from './db/schema'
+
+const client = createDrizzleClient({
+  schema,
+  config: { suffixes: { list: 's', single: '' } },
+  url: '/graphql',
+  headers: () => ({ Authorization: `Bearer ${getToken()}` }),
+})
+```
+
+### Config options
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `schema` | `Record<string, unknown>` | Your Drizzle schema exports (tables and relations) |
+| `config` | `BuildSchemaConfig` | Must match the server's config for correct query generation |
+| `url` | `string \| () => string` | GraphQL endpoint URL (static or dynamic) |
+| `headers` | `HeadersInit \| () => HeadersInit \| Promise<HeadersInit>` | Optional headers (static, sync, or async function) |
+
+:::caution
+The `config` object must match the `BuildSchemaConfig` used on the server. Mismatched suffixes or table exclusions will produce incorrect query names.
+:::
+
+## `new GraphQLClient`
+
+Manual setup with a pre-built schema descriptor. Use this when you have a generated schema descriptor (from `generateEntityDefs` or `buildSchemaDescriptor`) rather than the raw Drizzle schema.
+
+```ts
+import { GraphQLClient } from '@graphql-suite/client'
+
+const client = new GraphQLClient({
+  url: '/graphql',
+  schema: schemaDescriptor,
+  headers: { Authorization: 'Bearer ...' },
+})
+```
+
+The `schema` parameter is a `SchemaDescriptor` — a record mapping entity names to their query/mutation names, fields, and relations. This is the same format produced by `buildSchemaDescriptor` and `generateEntityDefs`.
+
+## Dynamic URL and headers
+
+Both `url` and `headers` accept functions, which is useful for authentication tokens and multi-tenant setups:
+
+```ts
+const client = createDrizzleClient({
+  schema,
+  config,
+  url: () => `${getApiBase()}/graphql`,
+  headers: async () => ({
+    Authorization: `Bearer ${await refreshToken()}`,
+    'X-Tenant-Id': getTenantId(),
+  }),
+})
+```
+
+The `url` function is called synchronously on each request. The `headers` function can be async and is awaited before each request.
+
+## Using the client
+
+Once created, use the `.entity()` method to access type-safe operations:
+
+```ts
+const articles = await client.entity('article').query({
+  select: { id: true, title: true },
+})
+```
+
+You can also execute raw GraphQL queries with `.execute()`:
+
+```ts
+const data = await client.execute(
+  `query { articles { id title } }`,
+  {},
+)
+```

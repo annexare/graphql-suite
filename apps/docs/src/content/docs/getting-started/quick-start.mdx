@@ -1,0 +1,120 @@
+---
+title: Quick Start
+description: End-to-end walkthrough from Drizzle schema to GraphQL API, type-safe client, and React hooks
+---
+
+This guide walks through the full stack: define tables with Drizzle, build a GraphQL server, query it with a type-safe client, and render the results with React hooks.
+
+## 1. Define your Drizzle schema
+
+```ts
+// db/schema.ts
+import { pgTable, text, uuid, timestamp } from 'drizzle-orm/pg-core'
+import { relations } from 'drizzle-orm'
+
+export const user = pgTable('user', {
+  id: uuid().primaryKey().defaultRandom(),
+  name: text().notNull(),
+  email: text().notNull().unique(),
+  createdAt: timestamp({ mode: 'date' }).notNull().defaultNow(),
+})
+
+export const post = pgTable('post', {
+  id: uuid().primaryKey().defaultRandom(),
+  title: text().notNull(),
+  body: text().notNull(),
+  authorId: uuid().notNull().references(() => user.id),
+  createdAt: timestamp({ mode: 'date' }).notNull().defaultNow(),
+})
+
+export const postRelations = relations(post, ({ one }) => ({
+  author: one(user, { fields: [post.authorId], references: [user.id] }),
+}))
+
+export const userRelations = relations(user, ({ many }) => ({
+  posts: many(post),
+}))
+```
+
+## 2. Build the GraphQL schema and serve it
+
+```ts
+// server.ts
+import { buildSchema } from '@graphql-suite/schema'
+import { drizzle } from 'drizzle-orm/bun-sql'
+import { createYoga } from 'graphql-yoga'
+import * as schema from './db/schema'
+
+const db = drizzle({ connection: process.env.DATABASE_URL!, schema })
+const { schema: graphqlSchema } = buildSchema(db, {
+  mutations: true,
+  suffixes: { list: 's', single: '' },
+})
+
+const yoga = createYoga({ schema: graphqlSchema })
+
+Bun.serve({
+  port: 4000,
+  fetch: yoga.fetch,
+})
+```
+
+`buildSchema` returns a standard `GraphQLSchema` that works with any GraphQL server library (Yoga, Apollo, Mercurius, etc.).
+
+## 3. Create a type-safe client
+
+```ts
+// client.ts
+import { createDrizzleClient } from '@graphql-suite/client'
+import * as schema from './db/schema'
+
+const client = createDrizzleClient({
+  schema,
+  config: { mutations: true, suffixes: { list: 's', single: '' } },
+  url: 'http://localhost:4000/graphql',
+})
+
+// Type-safe entity queries
+const posts = await client.entity('post').query({
+  select: { id: true, title: true, author: { name: true } },
+  where: { title: { ilike: '%graphql%' } },
+})
+```
+
+The `config` passed to the client must match the config used to build the server schema. This keeps query names and available operations in sync.
+
+:::tip
+You can share the config object between server and client by exporting it from a shared module.
+:::
+
+## 4. Use React hooks
+
+```tsx
+// App.tsx
+import { GraphQLProvider, useEntity, useEntityList } from '@graphql-suite/query'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+
+const queryClient = new QueryClient()
+const postEntity = client.entity('post')
+
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <GraphQLProvider client={client}>
+        <PostList />
+      </GraphQLProvider>
+    </QueryClientProvider>
+  )
+}
+
+function PostList() {
+  const { data, isPending } = useEntityList(postEntity, {
+    select: { id: true, title: true, author: { name: true } },
+  })
+
+  if (isPending) return <p>Loading...</p>
+  return <ul>{data?.map(p => <li key={p.id}>{p.title}</li>)}</ul>
+}
+```
+
+The hooks return standard TanStack Query results, so you get caching, background refetching, and loading/error states with no extra setup.

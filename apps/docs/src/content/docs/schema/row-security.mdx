@@ -1,0 +1,96 @@
+---
+title: Row Security
+description: Convert row-level security rules into resolver hooks and merge multiple hook configurations
+---
+
+The `withRowSecurity` and `mergeHooks` utilities let you implement row-level security using the hooks system. Instead of writing `before` hooks manually for every operation, you define declarative rules that automatically inject `WHERE` clauses.
+
+## `withRowSecurity`
+
+Converts a map of table-level security rules into a `HooksConfig`. Each rule is a function that receives the resolver `context` and returns a filter object. The filter is injected as a `WHERE` clause on all read and write operations that accept a `where` argument (`query`, `querySingle`, `count`, `update`, `delete`).
+
+```ts
+import { withRowSecurity } from '@graphql-suite/schema'
+
+const securityHooks = withRowSecurity({
+  post: (context) => ({ authorId: { eq: context.user.id } }),
+  comment: (context) => ({ postAuthorId: { eq: context.user.id } }),
+})
+```
+
+The generated hooks apply to the following operations per table:
+- `query`
+- `querySingle`
+- `count`
+- `update`
+- `delete`
+
+:::note
+`insert` and `insertSingle` are not affected by row security rules because they do not accept a `where` argument.
+:::
+
+Security rules override user-supplied filters on conflicting keys. If a user passes `where: { authorId: { eq: 'other' } }` but the security rule sets `authorId: { eq: context.user.id }`, the security rule wins.
+
+## `mergeHooks`
+
+Combines multiple `HooksConfig` objects into one. This is useful when you have row security hooks, logging hooks, and application-level hooks that need to coexist.
+
+```ts
+import { mergeHooks, withRowSecurity } from '@graphql-suite/schema'
+
+const securityHooks = withRowSecurity({
+  post: (context) => ({ authorId: { eq: context.user.id } }),
+})
+
+const loggingHooks = {
+  post: {
+    insert: {
+      after: async (ctx) => {
+        console.log('Post inserted:', ctx.result)
+        return ctx.result
+      },
+    },
+  },
+}
+
+const allHooks = mergeHooks(securityHooks, loggingHooks)
+
+const config = {
+  hooks: allHooks,
+}
+```
+
+### Merge behavior
+
+- **`before` hooks** are chained sequentially. Each hook receives the modified `args` from the previous hook.
+- **`after` hooks** are chained sequentially. Each hook receives the modified `result` from the previous hook.
+- **`resolve` hooks** cannot be composed. The last `resolve` hook wins.
+
+You can pass `undefined` values to `mergeHooks` safely; they are ignored.
+
+## Full example
+
+```ts
+import { buildSchema, mergeHooks, withRowSecurity } from '@graphql-suite/schema'
+
+const securityHooks = withRowSecurity({
+  post: (context) => ({ organizationId: { eq: context.user.orgId } }),
+  document: (context) => ({ teamId: { eq: context.user.teamId } }),
+})
+
+const applicationHooks = {
+  post: {
+    query: {
+      before: async (ctx) => {
+        return { args: { ...ctx.args, where: { ...ctx.args?.where, status: { eq: 'published' } } } }
+      },
+    },
+  },
+}
+
+const { schema } = buildSchema(db, {
+  hooks: mergeHooks(securityHooks, applicationHooks),
+})
+```
+
+In this example, a `post` query receives both the security filter (`organizationId`) and the application filter (`status: 'published'`). The security hook runs first, then the application hook chains on top.

@@ -1,0 +1,75 @@
+---
+title: Error Handling
+description: Error classes for handling GraphQL response errors and network failures
+---
+
+The client package provides two error classes that distinguish between GraphQL-level errors and network-level failures.
+
+## `GraphQLClientError`
+
+Thrown when the GraphQL server returns a response with an `errors` array. The HTTP status may still be 200 (the standard for GraphQL error responses).
+
+### Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `message` | `string` | All error messages joined with `'; '` |
+| `errors` | `GraphQLErrorEntry[]` | The full array of error entries from the response |
+| `status` | `number` | HTTP status code (typically 200) |
+
+Each `GraphQLErrorEntry` has:
+
+```ts
+type GraphQLErrorEntry = {
+  message: string
+  locations?: { line: number; column: number }[]
+  path?: (string | number)[]
+  extensions?: Record<string, unknown>
+}
+```
+
+## `NetworkError`
+
+Thrown when the HTTP request fails entirely (network unreachable, DNS failure, non-OK HTTP status).
+
+### Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `message` | `string` | Error description (e.g., `'HTTP 500: Internal Server Error'`) |
+| `status` | `number` | HTTP status code, or `0` if the request never completed |
+
+## Usage
+
+```ts
+import { GraphQLClientError, NetworkError } from '@graphql-suite/client'
+
+try {
+  const articles = await client.entity('article').query({
+    select: { id: true, title: true },
+  })
+} catch (e) {
+  if (e instanceof GraphQLClientError) {
+    // Server returned GraphQL errors
+    console.error('GraphQL errors:', e.errors)
+    console.error('Status:', e.status)
+  } else if (e instanceof NetworkError) {
+    // Request failed at the network level
+    console.error('Network error:', e.message)
+    console.error('Status:', e.status)
+  }
+}
+```
+
+## When each error is thrown
+
+| Scenario | Error class | `status` |
+|----------|-------------|----------|
+| Network unreachable / DNS failure | `NetworkError` | `0` |
+| HTTP 4xx or 5xx response | `NetworkError` | HTTP status code |
+| HTTP 200 with `errors` in JSON body | `GraphQLClientError` | `200` |
+| HTTP 200 with no `data` in JSON body | `GraphQLClientError` | `200` |
+
+:::tip
+Both error classes extend `Error`, so they work with standard `try`/`catch` and error boundary patterns. Use `instanceof` to distinguish between them.
+:::

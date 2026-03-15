@@ -1,0 +1,216 @@
+---
+title: Query API Reference
+description: Complete API reference for @graphql-suite/query
+---
+
+## Components
+
+### GraphQLProvider
+
+```tsx
+function GraphQLProvider<TSchema extends SchemaDescriptor, TDefs extends AnyEntityDefs>(props: {
+  client: GraphQLClient<TSchema, TDefs>
+  children: ReactNode
+}): JSX.Element
+```
+
+React context provider that makes the GraphQL client available to all hooks in the subtree. Must be nested inside a TanStack Query `QueryClientProvider`.
+
+## Hooks
+
+### useGraphQLClient
+
+```ts
+function useGraphQLClient<
+  TSchema extends SchemaDescriptor = SchemaDescriptor,
+  TDefs extends AnyEntityDefs = AnyEntityDefs,
+>(): GraphQLClient<TSchema, TDefs>
+```
+
+Returns the `GraphQLClient` instance from the nearest `GraphQLProvider`. Throws an error if called outside the provider tree.
+
+### useEntity
+
+```ts
+function useEntity<
+  TSchema extends SchemaDescriptor,
+  TDefs extends AnyEntityDefs,
+  TEntityName extends string & keyof TSchema & keyof TDefs,
+>(entityName: TEntityName): EntityClient<EntityDefsRef<TDefs>, TEntityName>
+```
+
+Returns a memoized entity client for the given entity name. Convenience wrapper around `useGraphQLClient().entity(name)`.
+
+**Parameters:**
+
+| Parameter | Type | Description |
+| --------- | ---- | ----------- |
+| `entityName` | `string` | Name of the entity in the schema |
+
+**Returns:** `EntityClient` — typed entity client with query/mutation methods.
+
+### useEntityQuery
+
+```ts
+function useEntityQuery<TDefs, TEntityName, TSelect>(
+  entity: EntityClient<EntityDefsRef<TDefs>, TEntityName>,
+  params: { select: TSelect; where?: Filters; orderBy?: OrderBy; offset?: number },
+  options?: EntityQueryOptions,
+): UseQueryResult<InferResult<...> | null>
+```
+
+Fetches a single entity matching the filter. Wraps TanStack Query's `useQuery`.
+
+**Parameters:**
+
+| Parameter | Type | Description |
+| --------- | ---- | ----------- |
+| `entity` | `EntityClient` | Entity client from `client.entity()` or `useEntity()` |
+| `params.select` | select object | Fields and relations to include |
+| `params.where` | filter object | Optional filter conditions |
+| `params.orderBy` | order object | Optional ordering |
+| `params.offset` | `number` | Optional offset |
+
+**Options:**
+
+| Option | Type | Description |
+| ------ | ---- | ----------- |
+| `enabled` | `boolean` | Enable/disable the query |
+| `gcTime` | `number` | Garbage collection time (ms) |
+| `staleTime` | `number` | Stale time (ms) |
+| `refetchOnWindowFocus` | `boolean` | Refetch on window focus |
+| `queryKey` | `unknown[]` | Custom query key |
+
+**Returns:** `UseQueryResult<T | null>` from TanStack Query.
+
+### useEntityList
+
+```ts
+function useEntityList<TDefs, TEntityName, TSelect>(
+  entity: EntityClient<EntityDefsRef<TDefs>, TEntityName>,
+  params: { select: TSelect; where?: Filters; orderBy?: OrderBy; limit?: number; offset?: number },
+  options?: EntityListOptions,
+): UseQueryResult<InferResult<...>[]>
+```
+
+Fetches a list of entities. Wraps TanStack Query's `useQuery`.
+
+**Parameters:**
+
+| Parameter | Type | Description |
+| --------- | ---- | ----------- |
+| `entity` | `EntityClient` | Entity client |
+| `params.select` | select object | Fields and relations to include |
+| `params.where` | filter object | Optional filter conditions |
+| `params.orderBy` | order object | Optional ordering |
+| `params.limit` | `number` | Optional row limit |
+| `params.offset` | `number` | Optional offset |
+
+**Options:** Same as `useEntityQuery`.
+
+**Returns:** `UseQueryResult<T[]>` from TanStack Query.
+
+### useEntityInfiniteQuery
+
+```ts
+function useEntityInfiniteQuery<TDefs, TEntityName, TSelect>(
+  entity: EntityClient<EntityDefsRef<TDefs>, TEntityName>,
+  params: { select: TSelect; pageSize: number; where?: Filters; orderBy?: OrderBy },
+  options?: EntityInfiniteOptions,
+): UseInfiniteQueryResult<{ pages: Array<{ items: T[]; count: number }> }>
+```
+
+Infinite-scroll pagination. Wraps TanStack Query's `useInfiniteQuery`. Each page contains `items` (the fetched rows) and `count` (total matching rows).
+
+**Parameters:**
+
+| Parameter | Type | Description |
+| --------- | ---- | ----------- |
+| `entity` | `EntityClient` | Entity client |
+| `params.select` | select object | Fields and relations to include |
+| `params.pageSize` | `number` | Items per page |
+| `params.where` | filter object | Optional filter conditions |
+| `params.orderBy` | order object | Optional ordering |
+
+**Options:**
+
+| Option | Type | Description |
+| ------ | ---- | ----------- |
+| `enabled` | `boolean` | Enable/disable the query |
+| `gcTime` | `number` | Garbage collection time (ms) |
+| `staleTime` | `number` | Stale time (ms) |
+| `queryKey` | `unknown[]` | Custom query key |
+
+**Returns:** `UseInfiniteQueryResult` from TanStack Query.
+
+### useEntityInsert
+
+```ts
+function useEntityInsert<TDefs, TEntityName, TSelect>(
+  entity: EntityClient<EntityDefsRef<TDefs>, TEntityName>,
+  returning?: TSelect,
+  options?: InsertOptions<InferResult<...>[]>,
+): UseMutationResult<InferResult<...>[], Error, { values: InsertInput[] }>
+```
+
+Insert mutation. The `mutate` function accepts `{ values: InsertInput[] }`.
+
+**Parameters:**
+
+| Parameter | Type | Description |
+| --------- | ---- | ----------- |
+| `entity` | `EntityClient` | Entity client |
+| `returning` | select object | Optional fields to return from inserted rows |
+| `options` | mutation options | Optional callbacks and cache settings |
+
+**Options:**
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `invalidate` | `boolean` | `true` | Invalidate queries after success |
+| `invalidateKey` | `unknown[]` | `['gql']` | Query key prefix to invalidate |
+| `onSuccess` | `(data) => void` | — | Success callback |
+| `onError` | `(error) => void` | — | Error callback |
+
+**Returns:** `UseMutationResult` from TanStack Query.
+
+### useEntityUpdate
+
+```ts
+function useEntityUpdate<TDefs, TEntityName, TSelect>(
+  entity: EntityClient<EntityDefsRef<TDefs>, TEntityName>,
+  returning?: TSelect,
+  options?: UpdateOptions<InferResult<...>[]>,
+): UseMutationResult<InferResult<...>[], Error, { set: UpdateInput; where?: Filters }>
+```
+
+Update mutation. The `mutate` function accepts `{ set: UpdateInput, where?: FilterInput }`.
+
+**Parameters, Options, Returns:** Same structure as `useEntityInsert`.
+
+### useEntityDelete
+
+```ts
+function useEntityDelete<TDefs, TEntityName, TSelect>(
+  entity: EntityClient<EntityDefsRef<TDefs>, TEntityName>,
+  returning?: TSelect,
+  options?: DeleteOptions<InferResult<...>[]>,
+): UseMutationResult<InferResult<...>[], Error, { where?: Filters }>
+```
+
+Delete mutation. The `mutate` function accepts `{ where?: FilterInput }`.
+
+**Parameters, Options, Returns:** Same structure as `useEntityInsert`.
+
+## Types
+
+### GraphQLClientContext
+
+```ts
+type GraphQLClientContext<
+  TSchema extends SchemaDescriptor = SchemaDescriptor,
+  TDefs extends AnyEntityDefs = AnyEntityDefs,
+> = {
+  client: GraphQLClient<TSchema, TDefs>
+}
+```

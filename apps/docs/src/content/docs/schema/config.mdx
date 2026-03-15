@@ -1,0 +1,206 @@
+---
+title: Configuration
+description: Full reference for BuildSchemaConfig options that control schema generation
+---
+
+`BuildSchemaConfig` is the configuration object accepted by `buildSchema`, `buildSchemaFromDrizzle`, and `buildEntities`. Every property is optional.
+
+## mutations
+
+**Type:** `boolean`
+**Default:** `true`
+
+Controls whether mutation operations (insert, insertSingle, update, delete) are generated. Set to `false` for a read-only GraphQL API.
+
+```ts
+const { schema } = buildSchema(db, {
+  mutations: false, // queries only, no insert/update/delete
+})
+```
+
+## suffixes
+
+**Type:** `{ list?: string; single?: string }`
+**Default:** `{ list: '', single: 'Single' }`
+
+Customizes the naming of generated query operations. Given a table named `article`:
+
+| Config | List query | Single query |
+| ------ | ---------- | ------------ |
+| `{ list: '', single: 'Single' }` (default) | `article` | `articleSingle` |
+| `{ list: 's', single: '' }` | `articles` | `article` |
+| `{ list: 'List', single: '' }` | `articleList` | `article` |
+
+```ts
+const { schema } = buildSchema(db, {
+  suffixes: { list: 's', single: '' },
+})
+```
+
+:::tip
+The suffix is appended directly to the table name, so `'s'` works for simple pluralization. For tables that need irregular plurals, consider renaming the table key in your Drizzle schema.
+:::
+
+## limitRelationDepth
+
+**Type:** `number`
+**Default:** `3` (server), `1` (client filter types)
+
+Maximum depth for expanding relation fields in the generated schema. Controls how many levels of nested relations appear in GraphQL object types.
+
+- Set to `0` to omit relations entirely
+- Leave `undefined` for no limit (not recommended for large schemas)
+
+```ts
+const { schema } = buildSchema(db, {
+  limitRelationDepth: 2, // post -> author -> (stop)
+})
+```
+
+:::caution
+Higher values produce exponentially more GraphQL types. If your schema has many cross-references, keep this at 2-3 to avoid slow schema builds and oversized SDL.
+:::
+
+## limitSelfRelationDepth
+
+**Type:** `number`
+**Default:** `1`
+
+Controls how many times a table can appear via direct self-relations in a single type path. Only applies to relations where the source and target table are the same (e.g., `category.parent` pointing back to `category`).
+
+- `1` — self-relation fields are omitted entirely
+- `2` — one level of expansion (the nested type has no further self-relation fields)
+
+```ts
+const { schema } = buildSchema(db, {
+  limitSelfRelationDepth: 2,
+  // category.parent -> category (expanded)
+  // but nested category won't have parent/children fields
+})
+```
+
+## tables.exclude
+
+**Type:** `readonly string[]`
+
+Removes tables from the schema completely. No types, no operations, and relations pointing to excluded tables are skipped.
+
+```ts
+const { schema } = buildSchema(db, {
+  tables: {
+    exclude: ['session', 'account', 'verification'],
+  },
+})
+```
+
+## tables.config
+
+**Type:** `Record<string, { queries?: boolean; mutations?: boolean }>`
+
+Per-table control over which operations are generated. Tables not listed get the default behavior.
+
+```ts
+const { schema } = buildSchema(db, {
+  mutations: true,
+  tables: {
+    config: {
+      auditLog: { queries: true, mutations: false }, // read-only
+      userSetting: { queries: true, mutations: true }, // explicit
+    },
+  },
+})
+```
+
+## pruneRelations
+
+**Type:** `Record<string, false | 'leaf' | { only: string[] }>`
+
+Fine-grained control over how specific relations expand in the schema. Keys use `tableName.relationName` format.
+
+| Value | Effect |
+| ----- | ------ |
+| `false` | Relation field is omitted entirely from the parent type |
+| `'leaf'` | Relation expands with scalar columns only (no nested relations) |
+| `{ only: [...] }` | Relation expands with only the listed child relation fields |
+
+```ts
+const { schema } = buildSchema(db, {
+  pruneRelations: {
+    'assetType.assets': false,              // remove back-reference
+    'override.asset': 'leaf',               // scalars only
+    'attribute.asset': { only: ['selectedVariant'] }, // keep one nested relation
+  },
+})
+```
+
+## hooks
+
+**Type:** `HooksConfig`
+
+Per-table lifecycle hooks for queries and mutations. Each operation can use either before/after hooks or a resolve hook.
+
+```ts
+const { schema } = buildSchema(db, {
+  hooks: {
+    post: {
+      query: {
+        before: (ctx) => {
+          // modify args or inject data before resolution
+          return { args: { ...ctx.args, where: { published: { eq: true } } } }
+        },
+      },
+      insert: {
+        after: (ctx) => {
+          // run side effects after insert
+          console.log('New post created:', ctx.result)
+          return ctx.result
+        },
+      },
+    },
+  },
+})
+```
+
+:::note
+Hooks are server-only. The client package imports `BuildSchemaConfig` for type-level inference and ignores the `hooks` property entirely.
+:::
+
+## debug
+
+**Type:** `boolean | { schemaSize?: boolean; relationTree?: boolean }`
+
+Enables diagnostic logging during schema construction.
+
+- `true` — logs SDL byte size and type count
+- `{ schemaSize: true }` — logs only schema size
+- `{ relationTree: true }` — logs the relation expansion tree
+
+```ts
+const { schema } = buildSchema(db, {
+  debug: { schemaSize: true, relationTree: true },
+})
+```
+
+## Real-world example
+
+Here is a complete configuration from a news application:
+
+```ts
+import type { BuildSchemaConfig } from '@graphql-suite/schema'
+
+const schemaConfig = {
+  mutations: true,
+  limitRelationDepth: 2,
+  limitSelfRelationDepth: 1,
+  suffixes: { list: 's', single: '' },
+  tables: {
+    config: {
+      articleCategory: { queries: true, mutations: false },
+      articleTag: { queries: true, mutations: false },
+      blockAsset: { queries: true, mutations: false },
+    },
+  },
+} as const satisfies BuildSchemaConfig
+```
+
+This configuration generates plural list names (`articles`, `users`), limits relation nesting to 2 levels, and makes junction tables (articleCategory, articleTag, blockAsset) read-only since they are managed through their parent mutations.
