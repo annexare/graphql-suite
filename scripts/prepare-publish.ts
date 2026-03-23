@@ -196,8 +196,14 @@ async function copyLicenseAndReadme(targetDir: string, rewriteScope = false) {
   if (await readmeFile.exists()) {
     if (rewriteScope) {
       let readme = await readmeFile.text()
+      // Rewrite all package references to the short scope
       readme = readme.replaceAll('@drizzle-graphql-suite/', '@graphql-suite/')
       readme = readme.replaceAll('drizzle-graphql-suite', 'graphql-suite')
+      // Restore GitHub repo URLs (the repo name hasn't changed)
+      readme = readme.replaceAll(
+        'github.com/annexare/graphql-suite',
+        'github.com/annexare/drizzle-graphql-suite',
+      )
       writes.push(Bun.write(join(targetDir, 'README.md'), readme))
     } else {
       writes.push(Bun.write(join(targetDir, 'README.md'), readmeFile))
