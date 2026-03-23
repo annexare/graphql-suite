@@ -26,7 +26,7 @@
     }
   },
   "scripts": {
-    "build": "bun build src/index.ts --outdir dist --target browser --production --external drizzle-orm && tsc -p tsconfig.build.json",
+    "build": "bun run ../../scripts/build-package.ts .",
     "check-types": "tsc --noEmit",
     "test": "bun test"
   },
