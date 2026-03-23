@@ -231,7 +231,13 @@ async function prepareScopedAlias(name: string, catalog: Record<string, string>)
 
   const resolvedPeers = resolveCatalogRefs(srcPkg.peerDependencies, catalog)
   if (resolvedPeers) {
-    pkg.peerDependencies = resolvedPeers
+    // Rewrite @drizzle-graphql-suite/* peers to @graphql-suite/* equivalents
+    const aliasPeers: Record<string, string> = {}
+    for (const [dep, range] of Object.entries(resolvedPeers)) {
+      const rewritten = dep.replace('@drizzle-graphql-suite/', '@graphql-suite/')
+      aliasPeers[rewritten] = range
+    }
+    pkg.peerDependencies = aliasPeers
   }
 
   await Promise.all([
