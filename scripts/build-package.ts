@@ -13,6 +13,7 @@ const result = await Bun.build({
   entrypoints: [join(packageDir, 'src/index.ts')],
   outdir: join(packageDir, 'dist'),
   target: 'browser',
+  minify: true,
   external: externals,
   banner,
 })
