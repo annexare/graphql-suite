@@ -25,7 +25,7 @@ export function QueryArticleListPage({ onSelectArticle }: QueryArticleListPagePr
       author: { displayName: true },
     },
     where: { status: { eq: 'published' } },
-    orderBy: { column: 'publishedAt', direction: 'desc' },
+    orderBy: { publishedAt: { direction: 'desc', priority: 1 } },
   })
 
   if (isPending) {
