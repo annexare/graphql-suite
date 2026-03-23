@@ -24,7 +24,11 @@ if (!result.success) {
 }
 
 // Generate .d.ts
-const tsc = Bun.spawn(['tsc', '-p', 'tsconfig.build.json'], { cwd: packageDir })
+const tsc = Bun.spawn(['tsc', '-p', 'tsconfig.build.json'], {
+  cwd: packageDir,
+  stdout: 'inherit',
+  stderr: 'inherit',
+})
 const exitCode = await tsc.exited
 if (exitCode !== 0) {
   process.exit(exitCode)
