@@ -177,7 +177,7 @@ async function prepareUmbrellaVariant(name: string, scope: string) {
   await Promise.all([
     ...wrapperWrites,
     Bun.write(join(targetDir, 'package.json'), `${JSON.stringify(pkg, null, 2)}\n`),
-    copyLicenseAndReadme(targetDir),
+    copyLicenseAndReadme(targetDir, scope === '@graphql-suite'),
   ])
 
   console.log(`Prepared ${name} umbrella package`)
@@ -185,7 +185,7 @@ async function prepareUmbrellaVariant(name: string, scope: string) {
 
 // ─── Alias packages (@graphql-suite/*) ──────────────────────
 
-async function copyLicenseAndReadme(targetDir: string) {
+async function copyLicenseAndReadme(targetDir: string, rewriteScope = false) {
   const licenseFile = Bun.file(join(rootDir, 'LICENSE'))
   const readmeFile = Bun.file(join(rootDir, 'README.md'))
   const writes: Promise<number>[] = []
@@ -194,7 +194,14 @@ async function copyLicenseAndReadme(targetDir: string) {
     writes.push(Bun.write(join(targetDir, 'LICENSE'), licenseFile))
   }
   if (await readmeFile.exists()) {
-    writes.push(Bun.write(join(targetDir, 'README.md'), readmeFile))
+    if (rewriteScope) {
+      let readme = await readmeFile.text()
+      readme = readme.replaceAll('@drizzle-graphql-suite/', '@graphql-suite/')
+      readme = readme.replaceAll('drizzle-graphql-suite', 'graphql-suite')
+      writes.push(Bun.write(join(targetDir, 'README.md'), readme))
+    } else {
+      writes.push(Bun.write(join(targetDir, 'README.md'), readmeFile))
+    }
   }
 
   await Promise.all(writes)
@@ -265,10 +272,12 @@ async function prepareScopedAlias(name: string, catalog: Record<string, string>)
     let content = await src.text()
     // Replace the original banner with the alias banner
     content = content.replace(/^\/\*\*.*?\*\/\n?/, `${aliasBanner}\n`)
+    // Rewrite @drizzle-graphql-suite/* imports to @graphql-suite/* in built files
+    content = content.replaceAll('@drizzle-graphql-suite/', '@graphql-suite/')
     writes.push(Bun.write(join(aliasDir, file), content))
   }
 
-  await Promise.all([...writes, copyLicenseAndReadme(aliasDir)])
+  await Promise.all([...writes, copyLicenseAndReadme(aliasDir, true)])
 
   console.log(`Prepared @graphql-suite/${name}`)
 }
