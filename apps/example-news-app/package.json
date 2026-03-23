@@ -26,7 +26,7 @@
     "@types/bun": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
-    "drizzle-kit": "0.31.9",
+    "drizzle-kit": "0.31.10",
     "linkedom": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",

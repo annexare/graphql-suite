@@ -64,9 +64,9 @@
       "apps/*"
     ],
     "catalog": {
-      "@biomejs/biome": "2.4.7",
-      "@tanstack/react-query": "5.90.21",
-      "@types/bun": "1.3.10",
+      "@biomejs/biome": "2.4.8",
+      "@tanstack/react-query": "5.95.2",
+      "@types/bun": "1.3.11",
       "@types/react": "19.2.14",
       "@types/react-dom": "19.2.3",
       "drizzle-orm": "0.45.1",
@@ -75,7 +75,7 @@
       "linkedom": "0.18.12",
       "react": "19.2.4",
       "react-dom": "19.2.4",
-      "typescript": "5.9.3"
+      "typescript": "6.0.2"
     }
   },
   "scripts": {
