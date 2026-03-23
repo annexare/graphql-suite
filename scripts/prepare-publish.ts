@@ -254,14 +254,18 @@ async function prepareScopedAlias(name: string, catalog: Record<string, string>)
     Bun.write(join(aliasDir, 'package.json'), `${JSON.stringify(pkg, null, 2)}\n`),
   ]
 
-  for (const file of ['index.js', 'index.d.ts']) {
+  const requiredFiles = ['index.js', 'index.d.ts']
+  for (const file of requiredFiles) {
     const src = Bun.file(join(srcDistDir, file))
-    if (await src.exists()) {
-      let content = await src.text()
-      // Replace the original banner with the alias banner
-      content = content.replace(/^\/\*\*.*?\*\/\n?/, `${aliasBanner}\n`)
-      writes.push(Bun.write(join(aliasDir, file), content))
+    if (!(await src.exists())) {
+      throw new Error(
+        `Missing build artifact: ${join(srcDistDir, file)}. Run 'bun run build' first.`,
+      )
     }
+    let content = await src.text()
+    // Replace the original banner with the alias banner
+    content = content.replace(/^\/\*\*.*?\*\/\n?/, `${aliasBanner}\n`)
+    writes.push(Bun.write(join(aliasDir, file), content))
   }
 
   await Promise.all([...writes, copyLicenseAndReadme(aliasDir)])
