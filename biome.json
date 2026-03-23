@@ -3,7 +3,7 @@
   "root": true,
   "files": {
     "ignoreUnknown": true,
-    "includes": ["**/*.{ts,tsx,json,jsonc}", "!!**/dist", "!!**/node_modules"]
+    "includes": ["**/*.{ts,tsx,json,jsonc}", "!!**/dist", "!!**/node_modules", "!!**/.astro"]
   },
   "formatter": {
     "enabled": true,
