@@ -114,11 +114,7 @@ async function preparePackage(packageDir: string, catalog: Record<string, string
   console.log(`Prepared ${srcPkg.name} for publishing`)
 }
 
-async function prepareUmbrellaVariant(
-  name: string,
-  scope: string,
-  catalog: Record<string, string>,
-) {
+async function prepareUmbrellaVariant(name: string, scope: string) {
   const rootPkg = await Bun.file(join(rootDir, 'package.json')).json()
   const targetDir = join(distDir, name)
 
@@ -256,8 +252,8 @@ async function main() {
   await Promise.all([
     ...packageDirs.map((dir) => preparePackage(dir, catalog)),
     ...ALIAS_PACKAGES.map((name) => prepareScopedAlias(name, catalog)),
-    prepareUmbrellaVariant('drizzle-graphql-suite', '@drizzle-graphql-suite', catalog),
-    prepareUmbrellaVariant('graphql-suite', '@graphql-suite', catalog),
+    prepareUmbrellaVariant('drizzle-graphql-suite', '@drizzle-graphql-suite'),
+    prepareUmbrellaVariant('graphql-suite', '@graphql-suite'),
   ])
   console.log('All packages prepared for publishing')
 }
