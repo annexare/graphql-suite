@@ -27,8 +27,19 @@ function resolveCatalogRefs(
 ): Record<string, string> | undefined {
   if (!deps) return undefined
   const resolved: Record<string, string> = {}
+  const missing: string[] = []
   for (const [name, version] of Object.entries(deps)) {
-    resolved[name] = version === 'catalog:' ? (catalog[name] ?? version) : version
+    if (version === 'catalog:') {
+      if (!catalog[name]) {
+        missing.push(name)
+      }
+      resolved[name] = catalog[name] ?? version
+    } else {
+      resolved[name] = version
+    }
+  }
+  if (missing.length) {
+    throw new Error(`Unresolved catalog: references: ${missing.join(', ')}`)
   }
   return resolved
 }
@@ -123,6 +134,9 @@ async function prepareUmbrellaVariant(
 
   // biome-ignore lint/suspicious/noExplicitAny: building dynamic object
   const dependencies: Record<string, any> = {}
+  // biome-ignore lint/suspicious/noExplicitAny: building dynamic object
+  const peerDependencies: Record<string, any> = {}
+
   for (const pkg of ALIAS_PACKAGES) {
     dependencies[`${scope}/${pkg}`] = rootPkg.version
   }
@@ -131,12 +145,13 @@ async function prepareUmbrellaVariant(
   if (resolvedDeps) {
     for (const [dep, ver] of Object.entries(resolvedDeps)) {
       if (!dep.startsWith('@drizzle-graphql-suite/')) {
-        dependencies[dep] = ver
+        peerDependencies[dep] = `>=${ver}`
       }
     }
   }
 
-  const pkg = {
+  // biome-ignore lint/suspicious/noExplicitAny: building dynamic object
+  const pkg: Record<string, any> = {
     name,
     version: rootPkg.version,
     description: rootPkg.description,
@@ -153,6 +168,10 @@ async function prepareUmbrellaVariant(
       './query': { types: './query.d.ts', import: './query.js' },
     },
     dependencies,
+  }
+
+  if (Object.keys(peerDependencies).length) {
+    pkg.peerDependencies = peerDependencies
   }
 
   await Promise.all([
