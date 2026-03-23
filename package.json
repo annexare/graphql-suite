@@ -80,17 +80,18 @@
   },
   "scripts": {
     "build": "bun run --filter '@drizzle-graphql-suite/schema' build && bun run --filter '@drizzle-graphql-suite/client' build && bun run --filter '@drizzle-graphql-suite/query' build",
+    "check": "bun run check-types && bun run lint:check && bun run test",
     "check-types": "bun run --filter '*' check-types",
-    "test": "bun run --filter '*' test",
+    "ci": "bun run check-types && bun run lint:check && bun run test",
+    "dev:docs": "bun run --filter 'docs' dev",
     "lint": "bunx @biomejs/biome check --write .",
     "lint:check": "bunx @biomejs/biome check .",
-    "check": "bun run check-types && bun run lint:check && bun run test",
-    "ci": "bun run check-types && bun run lint:check && bun run test",
-    "version": "bun run scripts/version-bump.ts",
     "prepare-publish": "bun run scripts/prepare-publish.ts",
-    "release": "bun run build && bun run prepare-publish",
     "publish-all": "npm publish && npm publish dist/@graphql-suite/schema && npm publish dist/@graphql-suite/client && npm publish dist/@graphql-suite/query && npm publish dist/graphql-suite",
-    "publish-new": "npm publish dist/@graphql-suite/schema && npm publish dist/@graphql-suite/client && npm publish dist/@graphql-suite/query && npm publish dist/graphql-suite"
+    "publish-new": "npm publish dist/@graphql-suite/schema && npm publish dist/@graphql-suite/client && npm publish dist/@graphql-suite/query && npm publish dist/graphql-suite",
+    "release": "bun run build && bun run prepare-publish",
+    "test": "bun run --filter '*' test",
+    "version": "bun run scripts/version-bump.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "catalog:",

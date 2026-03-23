@@ -1,0 +1,26 @@
+# GraphQL Suite
+
+> Auto-generated GraphQL CRUD, type-safe clients, and React Query hooks from Drizzle PostgreSQL schemas.
+
+GraphQL Suite turns Drizzle ORM table definitions into a production-ready GraphQL stack with zero code generation and full TypeScript inference.
+
+## Packages
+
+- @graphql-suite/schema: Generates a complete GraphQL schema with CRUD operations from Drizzle PostgreSQL tables
+- @graphql-suite/client: Type-safe GraphQL client that infers types from your Drizzle schema
+- @graphql-suite/query: React hooks wrapping TanStack Query for the client
+
+## Documentation
+
+- [Getting Started](https://graphql-suite.annexare.com/getting-started/installation/)
+- [Schema Package](https://graphql-suite.annexare.com/schema/overview/)
+- [Client Package](https://graphql-suite.annexare.com/client/overview/)
+- [Query Package](https://graphql-suite.annexare.com/query/overview/)
+- [Guides](https://graphql-suite.annexare.com/guides/schema-tuning/)
+- [API Reference](https://graphql-suite.annexare.com/reference/schema-api/)
+
+## Links
+
+- Source: https://github.com/annexare/drizzle-graphql-suite
+- npm: https://www.npmjs.com/org/graphql-suite
+- Docs: https://graphql-suite.annexare.com

@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://graphql-suite.annexare.com/sitemap-index.xml

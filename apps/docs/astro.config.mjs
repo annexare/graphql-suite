@@ -2,9 +2,13 @@ import starlight from '@astrojs/starlight'
 import { defineConfig } from 'astro/config'
 
 export default defineConfig({
+  site: 'https://graphql-suite.annexare.com',
   integrations: [
     starlight({
-      title: 'graphql-suite',
+      title: 'GraphQL Suite',
+      components: {
+        Footer: './src/components/Footer.astro',
+      },
       description:
         'Auto-generated GraphQL CRUD, type-safe clients, and React Query hooks from Drizzle PostgreSQL schemas',
       social: [
