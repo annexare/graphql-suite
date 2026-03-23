@@ -10,6 +10,31 @@ const ALIAS_REPOSITORY = {
   url: 'https://github.com/annexare/drizzle-graphql-suite.git',
 }
 
+// ─── Catalog resolution ──────────────────────────────────────
+
+async function loadCatalog(): Promise<Record<string, string>> {
+  const rootPkg = await Bun.file(join(rootDir, 'package.json')).json()
+  const workspaces = rootPkg.workspaces
+  if (typeof workspaces === 'object' && !Array.isArray(workspaces)) {
+    return workspaces.catalog ?? {}
+  }
+  return {}
+}
+
+function resolveCatalogRefs(
+  deps: Record<string, string> | undefined,
+  catalog: Record<string, string>,
+): Record<string, string> | undefined {
+  if (!deps) return undefined
+  const resolved: Record<string, string> = {}
+  for (const [name, version] of Object.entries(deps)) {
+    resolved[name] = version === 'catalog:' ? (catalog[name] ?? version) : version
+  }
+  return resolved
+}
+
+// ─── Package preparation ─────────────────────────────────────
+
 const FIELDS_TO_COPY = [
   'name',
   'version',
@@ -24,7 +49,7 @@ const FIELDS_TO_COPY = [
 
 const ALIAS_PACKAGES = ['schema', 'client', 'query'] as const
 
-async function preparePackage(packageDir: string) {
+async function preparePackage(packageDir: string, catalog: Record<string, string>) {
   const srcPkg = await Bun.file(join(packageDir, 'package.json')).json()
   const pkgDistDir = join(packageDir, 'dist')
 
@@ -49,12 +74,14 @@ async function preparePackage(packageDir: string) {
     },
   }
 
-  if (srcPkg.dependencies) {
-    publishPkg.dependencies = srcPkg.dependencies
+  const resolvedDeps = resolveCatalogRefs(srcPkg.dependencies, catalog)
+  if (resolvedDeps) {
+    publishPkg.dependencies = resolvedDeps
   }
 
-  if (srcPkg.peerDependencies) {
-    publishPkg.peerDependencies = srcPkg.peerDependencies
+  const resolvedPeers = resolveCatalogRefs(srcPkg.peerDependencies, catalog)
+  if (resolvedPeers) {
+    publishPkg.peerDependencies = resolvedPeers
   }
 
   await Bun.write(join(pkgDistDir, 'package.json'), `${JSON.stringify(publishPkg, null, 2)}\n`)
@@ -106,7 +133,7 @@ async function copyLicenseAndReadme(targetDir: string) {
   await Promise.all(writes)
 }
 
-async function prepareScopedAlias(name: string) {
+async function prepareScopedAlias(name: string, catalog: Record<string, string>) {
   const srcPkg = await Bun.file(join(packagesDir, name, 'package.json')).json()
   const aliasDir = join(distDir, '@graphql-suite', name)
 
@@ -136,8 +163,9 @@ async function prepareScopedAlias(name: string) {
     },
   }
 
-  if (srcPkg.peerDependencies) {
-    pkg.peerDependencies = srcPkg.peerDependencies
+  const resolvedPeers = resolveCatalogRefs(srcPkg.peerDependencies, catalog)
+  if (resolvedPeers) {
+    pkg.peerDependencies = resolvedPeers
   }
 
   await Promise.all([
@@ -217,13 +245,14 @@ async function prepareUmbrellaPackage() {
 }
 
 async function main() {
+  const catalog = await loadCatalog()
   const entries = await readdir(packagesDir, { withFileTypes: true })
   const packageDirs = entries.filter((e) => e.isDirectory()).map((e) => join(packagesDir, e.name))
 
   await Promise.all([
-    ...packageDirs.map(preparePackage),
+    ...packageDirs.map((dir) => preparePackage(dir, catalog)),
     prepareRootPackage(),
-    ...ALIAS_PACKAGES.map(prepareScopedAlias),
+    ...ALIAS_PACKAGES.map((name) => prepareScopedAlias(name, catalog)),
     prepareUmbrellaPackage(),
   ])
   console.log('All packages prepared for publishing')

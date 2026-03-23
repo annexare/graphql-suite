@@ -35,12 +35,12 @@
     "graphql": ">=16.3.0"
   },
   "dependencies": {
-    "graphql-parse-resolve-info": "4.14.1"
+    "graphql-parse-resolve-info": "catalog:"
   },
   "devDependencies": {
-    "@types/bun": "1.3.10",
-    "drizzle-orm": "0.45.1",
-    "graphql": "16.13.1",
-    "typescript": "5.9.3"
+    "@types/bun": "catalog:",
+    "drizzle-orm": "catalog:",
+    "graphql": "catalog:",
+    "typescript": "catalog:"
   }
 }
