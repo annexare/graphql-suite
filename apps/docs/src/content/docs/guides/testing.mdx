@@ -15,7 +15,11 @@ import { describe, expect, test } from 'bun:test'
 import { buildSchemaFromDrizzle } from '@graphql-suite/schema'
 import * as schema from './db'
 
-const config = { mutations: true, limitRelationDepth: 2 }
+const config = {
+  mutations: true,
+  limitRelationDepth: 2,
+  suffixes: { list: 's', single: '' },
+}
 const { schema: gqlSchema, entities } = buildSchemaFromDrizzle(schema, config)
 
 describe('GraphQL schema', () => {
@@ -26,7 +30,7 @@ describe('GraphQL schema', () => {
 
   test('generates insert mutation', () => {
     const mutationType = gqlSchema.getMutationType()
-    expect(mutationType?.getFields().insertArticle).toBeDefined()
+    expect(mutationType?.getFields().insertIntoArticle).toBeDefined()
   })
 
   test('SDL contains expected types', () => {
@@ -69,6 +73,11 @@ function createSeededMockDb(drizzleSchema, tables, tableNamesMap) {
     query,
     select: () => ({ from: () => ({ where: () => ({}) }) }),
   }
+}
+
+const config = {
+  mutations: true,
+  suffixes: { list: 's', single: '' },
 }
 
 // biome-ignore lint/suspicious/noExplicitAny: mock db for testing
