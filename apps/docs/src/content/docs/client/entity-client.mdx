@@ -114,10 +114,10 @@ Ordering uses column names with direction and priority:
 const articles = await client.entity('article').query({
   select: { id: true, title: true },
   orderBy: {
-    createdAt: { direction: 'desc', priority: 1 },
-    title: { direction: 'asc', priority: 2 },
+    createdAt: { direction: 'desc', priority: 2 },
+    title: { direction: 'asc', priority: 1 },
   },
 })
 ```
 
-The `priority` field determines sort order when multiple columns are specified (lower values are applied first).
+The `priority` field determines sort order when multiple columns are specified — higher values are applied first. In the example above, `createdAt` (priority 2) is the primary sort column, and `title` (priority 1) is used as a tiebreaker.

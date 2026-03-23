@@ -18,14 +18,14 @@ import * as schema from './db'
 const config = {
   mutations: true,
   limitRelationDepth: 2,
-  suffixes: { list: 's', single: '' },
+  suffixes: { list: 'List', single: '' },
 }
 const { schema: gqlSchema, entities } = buildSchemaFromDrizzle(schema, config)
 
 describe('GraphQL schema', () => {
-  test('generates article query type', () => {
+  test('generates article list query type', () => {
     const queryType = gqlSchema.getQueryType()
-    expect(queryType?.getFields().articles).toBeDefined()
+    expect(queryType?.getFields().articleList).toBeDefined()
   })
 
   test('generates insert mutation', () => {
@@ -77,7 +77,7 @@ function createSeededMockDb(drizzleSchema, tables, tableNamesMap) {
 
 const config = {
   mutations: true,
-  suffixes: { list: 's', single: '' },
+  suffixes: { list: 'List', single: '' },
 }
 
 // biome-ignore lint/suspicious/noExplicitAny: mock db for testing
@@ -90,11 +90,11 @@ test('fetches articles', async () => {
     new Request('http://test/graphql', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query: '{ articles { title } }' }),
+      body: JSON.stringify({ query: '{ articleList { title } }' }),
     }),
   )
   const json = await res.json()
-  expect(json.data.articles).toHaveLength(3)
+  expect(json.data.articleList).toHaveLength(3)
 })
 ```
 

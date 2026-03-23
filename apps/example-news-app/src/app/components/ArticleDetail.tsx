@@ -5,13 +5,13 @@ type Comment = {
   id: string
   body: string
   createdAt: string
-  author?: { displayName: string } | null
+  author: { displayName: string } | null
 }
 
 type ArticleDetailProps = {
   title: string
   publishedAt: string | null
-  author?: { displayName: string } | null
+  author: { displayName: string } | null
   blocks: Block[]
   comments: Comment[]
 }
@@ -79,7 +79,7 @@ export function ArticleDetail({
           {comments.map((c) => (
             <div key={c.id} style={{ padding: '8px 0', borderBottom: '1px solid #eee' }}>
               <p style={{ fontSize: 13, color: '#999', marginBottom: 2 }}>
-                {c.author?.displayName} \u00b7 {new Date(c.createdAt).toLocaleDateString()}
+                {c.author?.displayName ?? 'Anonymous'} \u00b7 {new Date(c.createdAt).toLocaleDateString()}
               </p>
               <p style={{ fontSize: 14 }}>{c.body}</p>
             </div>

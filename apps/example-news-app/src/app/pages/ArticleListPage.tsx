@@ -20,8 +20,8 @@ type ArticleSummary = {
 // ─── Query ───────────────────────────────────────────────────
 
 const ARTICLES_QUERY = `
-  query Articles($where: ArticleFilters, $orderBy: ArticleOrderBy) {
-    articles(where: $where, orderBy: $orderBy) {
+  query ArticleList($where: ArticleFilters, $orderBy: ArticleOrderBy) {
+    articleList(where: $where, orderBy: $orderBy) {
       id
       title
       excerpt
@@ -40,9 +40,9 @@ export function ArticleListPage({ onSelectArticle }: ArticleListPageProps) {
     queryFn: async () => {
       const result = await client.execute(ARTICLES_QUERY, {
         where: { status: { eq: 'published' } },
-        orderBy: { column: 'publishedAt', direction: 'desc' },
+        orderBy: { publishedAt: { direction: 'desc', priority: 1 } },
       })
-      return result.articles as ArticleSummary[]
+      return result.articleList as ArticleSummary[]
     },
   })
 

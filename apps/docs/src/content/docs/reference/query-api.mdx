@@ -68,7 +68,7 @@ Fetches a single entity matching the filter. Wraps TanStack Query's `useQuery`.
 | `entity` | `EntityClient` | Entity client from `client.entity()` or `useEntity()` |
 | `params.select` | select object | Fields and relations to include |
 | `params.where` | filter object | Optional filter conditions |
-| `params.orderBy` | order object | Optional ordering |
+| `params.orderBy` | `{ [column]: { direction, priority } }` | Optional ordering |
 | `params.offset` | `number` | Optional offset |
 
 **Options:**
@@ -102,7 +102,7 @@ Fetches a list of entities. Wraps TanStack Query's `useQuery`.
 | `entity` | `EntityClient` | Entity client |
 | `params.select` | select object | Fields and relations to include |
 | `params.where` | filter object | Optional filter conditions |
-| `params.orderBy` | order object | Optional ordering |
+| `params.orderBy` | `{ [column]: { direction, priority } }` | Optional ordering |
 | `params.limit` | `number` | Optional row limit |
 | `params.offset` | `number` | Optional offset |
 
@@ -130,7 +130,7 @@ Infinite-scroll pagination. Wraps TanStack Query's `useInfiniteQuery`. Each page
 | `params.select` | select object | Fields and relations to include |
 | `params.pageSize` | `number` | Items per page |
 | `params.where` | filter object | Optional filter conditions |
-| `params.orderBy` | order object | Optional ordering |
+| `params.orderBy` | `{ [column]: { direction, priority } }` | Optional ordering |
 
 **Options:**
 

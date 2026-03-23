@@ -5,7 +5,7 @@ type ArticleCardProps = {
   title: string
   excerpt: string | null
   publishedAt: string | null
-  author?: { displayName: string } | null
+  author: { displayName: string } | null
   onSelect?: (id: string) => void
 }
 

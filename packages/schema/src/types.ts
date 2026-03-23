@@ -206,6 +206,9 @@ export type BuildSchemaConfig = {
    * { suffixes: { list: 'List', single: 'Single' } }
    * ```
    * @default { list: '', single: 'Single' }
+   *
+   * TODO: Consider adding Intl.PluralRules-based pluralization as an alternative
+   * to simple suffix appending (e.g., `category` → `categories` instead of `categorys`).
    */
   suffixes?: {
     list?: string

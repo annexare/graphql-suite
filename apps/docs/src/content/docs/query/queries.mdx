@@ -15,7 +15,7 @@ import { useEntityList } from '@graphql-suite/query'
 const { data, isPending, error } = useEntityList(articleEntity, {
   select: { id: true, title: true, author: { name: true } },
   where: { status: { eq: 'published' } },
-  orderBy: { column: 'createdAt', direction: 'desc' },
+  orderBy: { createdAt: { direction: 'desc', priority: 1 } },
   limit: 10,
   offset: 0,
 })
@@ -27,9 +27,11 @@ const { data, isPending, error } = useEntityList(articleEntity, {
 | --------- | ---- | ----------- |
 | `select` | `Record<string, true \| nested>` | Fields and relations to fetch |
 | `where` | filter object | Optional filter conditions |
-| `orderBy` | `{ column, direction }` | Optional ordering |
+| `orderBy` | `{ [column]: { direction, priority } }` | Optional ordering (supports multiple columns) |
 | `limit` | `number` | Optional row limit |
 | `offset` | `number` | Optional row offset |
+
+Each `orderBy` key is a column name, with `direction` (`'asc'` or `'desc'`) and `priority` (integer, higher value = applied first) controlling multi-column sort order.
 
 ## useEntityQuery
 
@@ -50,7 +52,7 @@ const { data, isPending } = useEntityQuery(articleEntity, {
 | --------- | ---- | ----------- |
 | `select` | `Record<string, true \| nested>` | Fields and relations to fetch |
 | `where` | filter object | Optional filter conditions |
-| `orderBy` | `{ column, direction }` | Optional ordering |
+| `orderBy` | `{ [column]: { direction, priority } }` | Optional ordering |
 | `offset` | `number` | Optional offset |
 
 ## useEntityInfiniteQuery
@@ -79,7 +81,7 @@ Each page object contains `{ items, count }` where `count` is the total number o
 | `select` | `Record<string, true \| nested>` | Fields and relations to fetch |
 | `pageSize` | `number` | Number of items per page |
 | `where` | filter object | Optional filter conditions |
-| `orderBy` | `{ column, direction }` | Optional ordering |
+| `orderBy` | `{ [column]: { direction, priority } }` | Optional ordering |
 
 ## Common options
 

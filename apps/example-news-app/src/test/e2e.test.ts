@@ -30,21 +30,21 @@ async function gql(query: string, variables?: Record<string, unknown>) {
 // ─── GraphQL API ────────────────────────────────────────────
 
 describe('GraphQL API', () => {
-  test('articles query returns seed articles', async () => {
-    const { data } = await gql('{ articles { id title } }')
-    expect(data.articles).toHaveLength(3)
-    const titles = data.articles.map((a: { title: string }) => a.title)
+  test('articleList query returns seed articles', async () => {
+    const { data } = await gql('{ articleList { id title } }')
+    expect(data.articleList).toHaveLength(3)
+    const titles = data.articleList.map((a: { title: string }) => a.title)
     expect(titles).toContain('AI Breakthrough: New Model Achieves Human-Level Reasoning')
   })
 
   test('single article with blocks', async () => {
     const { data } = await gql(`{
-      articles {
+      articleList {
         id title
         blocks { id type content }
       }
     }`)
-    const aiArticle = data.articles.find((a: { title: string }) =>
+    const aiArticle = data.articleList.find((a: { title: string }) =>
       a.title.includes('AI Breakthrough'),
     )
     expect(aiArticle).toBeDefined()
@@ -52,24 +52,24 @@ describe('GraphQL API', () => {
     expect(Array.isArray(aiArticle.blocks)).toBe(true)
   })
 
-  test('users query returns seed users', async () => {
-    const { data } = await gql('{ users { id displayName } }')
-    expect(data.users).toHaveLength(3)
+  test('userList query returns seed users', async () => {
+    const { data } = await gql('{ userList { id displayName } }')
+    expect(data.userList).toHaveLength(3)
   })
 
-  test('categorys query returns categories', async () => {
-    const { data } = await gql('{ categorys { id name } }')
-    expect(data.categorys).toHaveLength(4)
+  test('categoryList query returns categories', async () => {
+    const { data } = await gql('{ categoryList { id name } }')
+    expect(data.categoryList).toHaveLength(4)
   })
 
-  test('tags query returns tags', async () => {
-    const { data } = await gql('{ tags { id name } }')
-    expect(data.tags).toHaveLength(5)
+  test('tagList query returns tags', async () => {
+    const { data } = await gql('{ tagList { id name } }')
+    expect(data.tagList).toHaveLength(5)
   })
 
-  test('comments with author', async () => {
-    const { data } = await gql('{ comments { id body author { displayName } } }')
-    expect(data.comments).toHaveLength(3)
+  test('commentList with author', async () => {
+    const { data } = await gql('{ commentList { id body author { displayName } } }')
+    expect(data.commentList).toHaveLength(3)
   })
 })
 

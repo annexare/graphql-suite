@@ -39,7 +39,7 @@ type ArticleDetail = {
 // ─── GraphQL Queries ────────────────────────────────────────
 
 const ARTICLES_QUERY = `{
-  articles {
+  articleList {
     id title slug excerpt status publishedAt
     author { displayName }
   }
@@ -142,7 +142,7 @@ export function createFetchHandler(yoga: YogaLike): (req: Request) => Response |
     // SSR: Articles list page
     if (url.pathname === '/articles') {
       const data = await executeGraphQL(yoga, ARTICLES_QUERY)
-      const allArticles = (data.articles ?? []) as ArticleSummary[]
+      const allArticles = (data.articleList ?? []) as ArticleSummary[]
       const published = allArticles.filter((a) => a.status === 'published')
       const bodyHtml = renderToString(createElement(ArticlesPage, { articles: published }))
       return htmlShell(bodyHtml, 'Published Articles')

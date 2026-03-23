@@ -4,7 +4,7 @@ export const schemaConfig = {
   mutations: true,
   limitRelationDepth: 2,
   limitSelfRelationDepth: 1,
-  suffixes: { list: 's', single: '' },
+  suffixes: { list: 'List', single: '' },
   tables: {
     config: {
       articleCategory: { queries: true, mutations: false },
