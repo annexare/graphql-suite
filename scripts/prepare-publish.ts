@@ -141,11 +141,14 @@ async function prepareUmbrellaVariant(
     dependencies[`${scope}/${pkg}`] = rootPkg.version
   }
 
-  const resolvedDeps = resolveCatalogRefs(rootPkg.dependencies, catalog)
-  if (resolvedDeps) {
-    for (const [dep, ver] of Object.entries(resolvedDeps)) {
-      if (!dep.startsWith('@drizzle-graphql-suite/')) {
-        peerDependencies[dep] = `>=${ver}`
+  // Collect peer dependencies from the underlying packages to match their declared ranges
+  for (const pkg of ALIAS_PACKAGES) {
+    const srcPkg = await Bun.file(join(packagesDir, pkg, 'package.json')).json()
+    if (srcPkg.peerDependencies) {
+      for (const [dep, range] of Object.entries(srcPkg.peerDependencies) as [string, string][]) {
+        if (!dep.startsWith('@drizzle-graphql-suite/') && !peerDependencies[dep]) {
+          peerDependencies[dep] = range
+        }
       }
     }
   }
