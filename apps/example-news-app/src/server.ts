@@ -31,12 +31,13 @@ const fetchHandler = createFetchHandler(yoga)
 
 const distDir = join(import.meta.dir, 'app', 'dist')
 
-function serveStatic(path: string): Response | null {
+async function serveStatic(path: string): Promise<Response | null> {
   try {
     const sanitized = path.replace(/^\/+/, '')
     const filePath = resolve(distDir, sanitized)
-    if (!filePath.startsWith(distDir)) return null
+    if (!filePath.startsWith(`${distDir}/`)) return null
     const file = Bun.file(filePath)
+    if (!(await file.exists())) return null
     return new Response(file)
   } catch {
     return null
@@ -59,7 +60,7 @@ Bun.serve({
 
     // Static assets
     if (url.pathname !== '/' && url.pathname.includes('.')) {
-      const staticResponse = serveStatic(url.pathname)
+      const staticResponse = await serveStatic(url.pathname)
       if (staticResponse) return staticResponse
     }
 

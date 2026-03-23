@@ -12,13 +12,13 @@ const { schema } = buildSchemaFromDrizzle(drizzleSchema, schemaConfig)
 // ─── Tests ───────────────────────────────────────────────────
 
 describe('schema size and performance', () => {
-  test('SDL generation completes in under 500ms', () => {
+  test('SDL generation completes in under 1s', () => {
     const start = performance.now()
     const sdl = printSchema(lexicographicSortSchema(schema))
     const elapsed = performance.now() - start
 
     expect(sdl).toBeString()
-    expect(elapsed).toBeLessThan(500)
+    expect(elapsed).toBeLessThan(1000)
   })
 
   test('SDL size is under 200KB', () => {

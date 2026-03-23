@@ -126,20 +126,12 @@ export function createFetchHandler(yoga: YogaLike): (req: Request) => Response |
     // SSR: Article detail page
     if (url.pathname.startsWith('/articles/') && url.pathname.length > '/articles/'.length) {
       const slug = url.pathname.slice('/articles/'.length)
-      const data = await executeGraphQL(yoga, ARTICLES_QUERY)
-      const allArticles = (data.articles ?? []) as ArticleSummary[]
-      const match = allArticles.find((a) => a.slug === slug)
-
-      if (!match) {
-        return new Response('Not Found', { status: 404, headers: { 'Content-Type': 'text/html' } })
-      }
-
       const detailData = await executeGraphQL(yoga, ARTICLE_QUERY, {
-        where: { id: { eq: match.id } },
+        where: { slug: { eq: slug } },
       })
       const article = detailData.article as ArticleDetail | null
 
-      if (!article) {
+      if (!article || article.slug !== slug) {
         return new Response('Not Found', { status: 404, headers: { 'Content-Type': 'text/html' } })
       }
 

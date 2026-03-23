@@ -1,3 +1,4 @@
+import type { AnyPgColumn } from 'drizzle-orm/pg-core'
 import {
   integer,
   jsonb,
@@ -161,7 +162,7 @@ export const comment = pgTable('comment', {
   authorId: uuid()
     .notNull()
     .references(() => user.id),
-  parentId: uuid(),
+  parentId: uuid().references((): AnyPgColumn => comment.id, { onDelete: 'cascade' }),
   body: text().notNull(),
   createdAt: timestamp({ mode: 'date' }).notNull().defaultNow(),
   updatedAt: timestamp({ mode: 'date' }).$onUpdateFn(() => new Date()),
