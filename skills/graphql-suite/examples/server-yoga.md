@@ -4,7 +4,7 @@ GraphQL Yoga server with `buildSchema`, hooks, and table exclusion.
 
 ```ts
 import { createServer } from 'node:http'
-import { buildSchema } from 'graphql-suite/schema'
+import { buildSchema } from '@graphql-suite/schema'
 import { createYoga } from 'graphql-yoga'
 
 import { db } from './db' // Your Drizzle db instance

@@ -52,7 +52,7 @@ Inspired by [`drizzle-graphql`](https://github.com/drizzle-team/drizzle-graphql)
 Builds a complete `GraphQLSchema` with all CRUD operations from a Drizzle database instance. Returns `{ schema, entities, withPermissions }`.
 
 ```ts
-import { buildSchema } from 'graphql-suite/schema'
+import { buildSchema } from '@graphql-suite/schema'
 import { createYoga } from 'graphql-yoga'
 import { db } from './db'
 
@@ -102,7 +102,7 @@ new Elysia()
 Returns `GeneratedEntities` only — queries, mutations, inputs, and types — without constructing a `GraphQLSchema`. Use this when composing into a larger schema (e.g., Pothos) to avoid redundant schema validation.
 
 ```ts
-import { buildEntities } from 'graphql-suite/schema'
+import { buildEntities } from '@graphql-suite/schema'
 
 const entities = buildEntities(db, { mutations: false })
 // entities.queries, entities.mutations, entities.inputs, entities.types
@@ -113,7 +113,7 @@ const entities = buildEntities(db, { mutations: false })
 Builds a schema directly from Drizzle schema exports — no database connection or `.env` required. Resolvers are stubs. Intended for schema introspection and code generation.
 
 ```ts
-import { buildSchemaFromDrizzle } from 'graphql-suite/schema'
+import { buildSchemaFromDrizzle } from '@graphql-suite/schema'
 import * as schema from './db/schema'
 
 const { schema: graphqlSchema } = buildSchemaFromDrizzle(schema)
@@ -209,7 +209,7 @@ Enable diagnostic logging for schema size and relation tree.
 Build filtered `GraphQLSchema` variants per role or user — introspection fully reflects what each role can see and do.
 
 ```ts
-import { buildSchema, permissive, restricted, readOnly } from 'graphql-suite/schema'
+import { buildSchema, permissive, restricted, readOnly } from '@graphql-suite/schema'
 
 const { schema, withPermissions } = buildSchema(db)
 
@@ -266,7 +266,7 @@ In **permissive** mode, omitted fields default to `true`. In **restricted** mode
 Generate hooks that inject WHERE clauses for row-level filtering. Compose with other hooks using `mergeHooks`.
 
 ```ts
-import { buildSchema, withRowSecurity, mergeHooks } from 'graphql-suite/schema'
+import { buildSchema, withRowSecurity, mergeHooks } from '@graphql-suite/schema'
 
 const { schema } = buildSchema(db, {
   hooks: mergeHooks(
@@ -420,7 +420,7 @@ Three code generation functions for producing static artifacts from a GraphQL sc
 Generates the GraphQL Schema Definition Language string.
 
 ```ts
-import { buildSchemaFromDrizzle, generateSDL } from 'graphql-suite/schema'
+import { buildSchemaFromDrizzle, generateSDL } from '@graphql-suite/schema'
 import * as drizzleSchema from './db/schema'
 import { writeFileSync } from 'node:fs'
 
@@ -433,7 +433,7 @@ writeFileSync('schema.graphql', generateSDL(schema))
 Generates TypeScript types: wire format types (Date → string), filter types, insert/update input types, and orderBy types. Optionally imports Drizzle types for precise wire format derivation.
 
 ```ts
-import { generateTypes } from 'graphql-suite/schema'
+import { generateTypes } from '@graphql-suite/schema'
 
 const types = generateTypes(schema, {
   drizzle: {
@@ -449,7 +449,7 @@ writeFileSync('generated/types.ts', types)
 Generates a runtime schema descriptor object and `EntityDefs` type for the client package. Use this instead of `createDrizzleClient` when the client is in a separate repo and can't import the Drizzle schema.
 
 ```ts
-import { generateEntityDefs } from 'graphql-suite/schema'
+import { generateEntityDefs } from '@graphql-suite/schema'
 
 const entityDefs = generateEntityDefs(schema, {
   drizzle: { importPath: '@myapp/db/schema' },
@@ -460,7 +460,7 @@ writeFileSync('generated/entity-defs.ts', entityDefs)
 ### Full Codegen Script
 
 ```ts
-import { buildSchemaFromDrizzle, generateSDL, generateTypes, generateEntityDefs } from 'graphql-suite/schema'
+import { buildSchemaFromDrizzle, generateSDL, generateTypes, generateEntityDefs } from '@graphql-suite/schema'
 import * as drizzleSchema from './db/schema'
 import { writeFileSync, mkdirSync } from 'node:fs'
 

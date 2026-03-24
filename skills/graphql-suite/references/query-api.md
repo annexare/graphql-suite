@@ -9,7 +9,7 @@
 Provides the `GraphQLClient` to all hooks via React context. Must be nested inside `<QueryClientProvider>`.
 
 ```tsx
-import { GraphQLProvider } from 'graphql-suite/query'
+import { GraphQLProvider } from '@graphql-suite/query'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
 const queryClient = new QueryClient()

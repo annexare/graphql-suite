@@ -51,7 +51,7 @@ export const postRelations = relations(post, ({ one }) => ({
 
 ```ts
 // server.ts
-import { buildSchema } from 'graphql-suite/schema'
+import { buildSchema } from '@graphql-suite/schema'
 import { createYoga } from 'graphql-yoga'
 import { createServer } from 'node:http'
 import { db } from './db'
@@ -69,7 +69,7 @@ createServer(yoga).listen(4000)
 
 ```ts
 // lib/graphql-client.ts
-import { createDrizzleClient } from 'graphql-suite/client'
+import { createDrizzleClient } from '@graphql-suite/client'
 import * as schema from './db/schema'
 
 export const client = createDrizzleClient({
@@ -90,7 +90,7 @@ export const client = createDrizzleClient({
 ```tsx
 // app/providers.tsx
 'use client'
-import { GraphQLProvider } from 'graphql-suite/query'
+import { GraphQLProvider } from '@graphql-suite/query'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { client } from '@/lib/graphql-client'
 
@@ -110,7 +110,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
 ```tsx
 // components/user-list.tsx
 'use client'
-import { useEntity, useEntityList } from 'graphql-suite/query'
+import { useEntity, useEntityList } from '@graphql-suite/query'
 
 export function UserList() {
   const user = useEntity('user')
@@ -204,7 +204,7 @@ Add role-based schema selection to an existing setup:
 
 ```ts
 // config/permissions.ts
-import { permissive, readOnly, restricted } from 'graphql-suite/schema'
+import { permissive, readOnly, restricted } from '@graphql-suite/schema'
 
 export const permissions = {
   admin: null, // uses full schema
@@ -225,7 +225,7 @@ export const permissions = {
 
 ```ts
 // server.ts
-import { buildSchema } from 'graphql-suite/schema'
+import { buildSchema } from '@graphql-suite/schema'
 import { createYoga } from 'graphql-yoga'
 import { createServer } from 'node:http'
 import { db } from './db'
@@ -276,7 +276,7 @@ If the client is in a different repo from the server:
 
 2. **Client repo:** Import generated code:
    ```ts
-   import { createClient } from 'graphql-suite/client'
+   import { createClient } from '@graphql-suite/client'
    import { schema, type EntityDefs } from './generated/entity-defs'
 
    const client = createClient<typeof schema, EntityDefs>({

@@ -8,7 +8,7 @@ import {
   generateEntityDefs,
   generateSDL,
   generateTypes,
-} from 'graphql-suite/schema'
+} from '@graphql-suite/schema'
 
 // Import your Drizzle schema (tables + relations)
 import * as drizzleSchema from './db/schema'
@@ -52,7 +52,7 @@ console.log('Code generation complete!')
 
 // ─── Using Generated Code with Client ────────────────────────
 //
-// import { createClient } from 'graphql-suite/client'
+// import { createClient } from '@graphql-suite/client'
 // import { schema, type EntityDefs } from './generated/entity-defs'
 //
 // const client = createClient<typeof schema, EntityDefs>({

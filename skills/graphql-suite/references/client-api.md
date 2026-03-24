@@ -9,7 +9,7 @@
 Recommended entry point. Creates a `GraphQLClient` from your Drizzle schema with full type inference for filters, inputs, and results.
 
 ```ts
-import { createDrizzleClient } from 'graphql-suite/client'
+import { createDrizzleClient } from '@graphql-suite/client'
 import * as schema from './db/schema'
 
 const client = createDrizzleClient({
@@ -38,7 +38,7 @@ type DrizzleClientConfig<TSchema, TConfig> = {
 Alternative entry point for pre-generated schema descriptors (from codegen workflow).
 
 ```ts
-import { createClient } from 'graphql-suite/client'
+import { createClient } from '@graphql-suite/client'
 import { schema, type EntityDefs } from './generated/entity-defs'
 
 const client = createClient<typeof schema, EntityDefs>({
@@ -64,7 +64,7 @@ type ClientConfig<TSchema extends SchemaDescriptor> = {
 Build a schema descriptor from Drizzle schema exports. Used internally by `createDrizzleClient` and in codegen workflows.
 
 ```ts
-import { buildSchemaDescriptor } from 'graphql-suite/client'
+import { buildSchemaDescriptor } from '@graphql-suite/client'
 import * as schema from './db/schema'
 
 const descriptor = buildSchemaDescriptor(schema, { suffixes: { list: 's' } })
@@ -270,7 +270,7 @@ createDrizzleClient({
 Thrown when the GraphQL response contains errors.
 
 ```ts
-import { GraphQLClientError } from 'graphql-suite/client'
+import { GraphQLClientError } from '@graphql-suite/client'
 
 class GraphQLClientError extends Error {
   readonly errors: GraphQLErrorEntry[]  // All GraphQL errors
@@ -290,7 +290,7 @@ type GraphQLErrorEntry = {
 Thrown on HTTP/network failures (non-OK status, fetch errors).
 
 ```ts
-import { NetworkError } from 'graphql-suite/client'
+import { NetworkError } from '@graphql-suite/client'
 
 class NetworkError extends Error {
   readonly status: number  // HTTP status code

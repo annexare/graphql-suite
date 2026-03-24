@@ -3,8 +3,8 @@
 Hook patterns for authentication, authorization, and data transformation.
 
 ```ts
-import type { BuildSchemaConfig, HooksConfig } from 'graphql-suite/schema'
-import { mergeHooks } from 'graphql-suite/schema'
+import type { BuildSchemaConfig, HooksConfig } from '@graphql-suite/schema'
+import { mergeHooks } from '@graphql-suite/schema'
 
 // ─── Auth Guard Hook ─────────────────────────────────────────
 // Block unauthenticated access to all operations on a table.
@@ -153,7 +153,7 @@ import {
   permissive,
   readOnly,
   restricted,
-} from 'graphql-suite/schema'
+} from '@graphql-suite/schema'
 
 const { schema: adminSchema, withPermissions } = buildSchema(db, {
   suffixes: { list: 's' },
@@ -181,7 +181,7 @@ import {
   buildSchema,
   mergeHooks,
   withRowSecurity,
-} from 'graphql-suite/schema'
+} from '@graphql-suite/schema'
 
 const rlsHooks = withRowSecurity({
   posts: (context) => ({ authorId: { eq: context.user.id } }),

@@ -69,7 +69,7 @@ export const postRelations = relations(post, ({ one }) => ({
 ### 2. Build GraphQL Server
 
 ```ts
-import { buildSchema } from 'graphql-suite/schema'
+import { buildSchema } from '@graphql-suite/schema'
 import { createYoga } from 'graphql-yoga'
 import { createServer } from 'node:http'
 import { db } from './db'
@@ -94,7 +94,7 @@ createServer(yoga).listen(4000)
 ### 3. Create Type-Safe Client
 
 ```ts
-import { createDrizzleClient } from 'graphql-suite/client'
+import { createDrizzleClient } from '@graphql-suite/client'
 import * as schema from './db/schema'
 
 const client = createDrizzleClient({
@@ -114,7 +114,7 @@ const users = await client.entity('user').query({
 ### 4. Add React Hooks
 
 ```tsx
-import { GraphQLProvider, useEntity, useEntityList } from 'graphql-suite/query'
+import { GraphQLProvider, useEntity, useEntityList } from '@graphql-suite/query'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
 const queryClient = new QueryClient()
@@ -316,7 +316,7 @@ See [patterns/hooks-patterns.md](patterns/hooks-patterns.md) for common recipes.
 Build filtered `GraphQLSchema` variants per role or user — introspection fully reflects what each role can see and do.
 
 ```ts
-import { buildSchema, permissive, restricted, readOnly } from 'graphql-suite/schema'
+import { buildSchema, permissive, restricted, readOnly } from '@graphql-suite/schema'
 
 const { schema, withPermissions } = buildSchema(db)
 
@@ -371,7 +371,7 @@ See [references/permissions.md](references/permissions.md) for full API details 
 Generate hooks that inject WHERE clauses for row-level filtering. Compose with other hooks using `mergeHooks`.
 
 ```ts
-import { buildSchema, withRowSecurity, mergeHooks } from 'graphql-suite/schema'
+import { buildSchema, withRowSecurity, mergeHooks } from '@graphql-suite/schema'
 
 const { schema } = buildSchema(db, {
   hooks: mergeHooks(
@@ -436,7 +436,7 @@ Errors thrown in hooks or resolvers are caught and re-thrown as `GraphQLError`:
 ### Client
 
 ```ts
-import { GraphQLClientError, NetworkError } from 'graphql-suite/client'
+import { GraphQLClientError, NetworkError } from '@graphql-suite/client'
 
 try {
   await client.entity('user').query({ select: { id: true } })

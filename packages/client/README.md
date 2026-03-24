@@ -32,7 +32,7 @@ npm install graphql-suite
 Use `createDrizzleClient` to create a client that infers all types directly from your Drizzle schema module — no code generation needed.
 
 ```ts
-import { createDrizzleClient } from 'graphql-suite/client'
+import { createDrizzleClient } from '@graphql-suite/client'
 import * as schema from './db/schema'
 
 const client = createDrizzleClient({
@@ -51,7 +51,7 @@ const client = createDrizzleClient({
 Use `createClient` with a codegen-generated schema descriptor when the client is in a separate repository that can't import the Drizzle schema directly.
 
 ```ts
-import { createClient } from 'graphql-suite/client'
+import { createClient } from '@graphql-suite/client'
 import { schema, type EntityDefs } from './generated/entity-defs'
 
 const client = createClient<typeof schema, EntityDefs>({
@@ -171,7 +171,7 @@ A `SchemaDescriptor` is a runtime object mapping entity names to their operation
 Builds a `SchemaDescriptor` from a Drizzle schema module. This is called internally by `createDrizzleClient`, but can be used directly if you need the descriptor.
 
 ```ts
-import { buildSchemaDescriptor } from 'graphql-suite/client'
+import { buildSchemaDescriptor } from '@graphql-suite/client'
 import * as schema from './db/schema'
 
 const descriptor = buildSchemaDescriptor(schema, {
@@ -192,7 +192,7 @@ The client provides end-to-end type inference from Drizzle schema to query resul
 Infers the complete entity type definitions from a Drizzle schema module, including fields (with Date → string wire conversion), relations, filters, insert inputs, update inputs, and orderBy types.
 
 ```ts
-import type { InferEntityDefs } from 'graphql-suite/client'
+import type { InferEntityDefs } from '@graphql-suite/client'
 import type * as schema from './db/schema'
 
 type MyEntityDefs = InferEntityDefs<typeof schema, { tables: { exclude: ['session'] } }>
@@ -243,7 +243,7 @@ Thrown when the HTTP request fails (network error or non-2xx status).
 - **`message`** — error description
 
 ```ts
-import { GraphQLClientError, NetworkError } from 'graphql-suite/client'
+import { GraphQLClientError, NetworkError } from '@graphql-suite/client'
 
 try {
   const users = await client.entity('user').query({

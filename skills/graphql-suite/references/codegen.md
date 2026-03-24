@@ -11,7 +11,7 @@
 Generate GraphQL Schema Definition Language string.
 
 ```ts
-import { buildSchemaFromDrizzle, generateSDL } from 'graphql-suite/schema'
+import { buildSchemaFromDrizzle, generateSDL } from '@graphql-suite/schema'
 import * as drizzleSchema from './db/schema'
 
 const { schema } = buildSchemaFromDrizzle(drizzleSchema)
@@ -29,7 +29,7 @@ const sdl = generateSDL(schema)
 Generate TypeScript type definitions including wire format types, filter types, input types, and orderBy types.
 
 ```ts
-import { buildSchemaFromDrizzle, generateTypes } from 'graphql-suite/schema'
+import { buildSchemaFromDrizzle, generateTypes } from '@graphql-suite/schema'
 import * as drizzleSchema from './db/schema'
 
 const { schema } = buildSchemaFromDrizzle(drizzleSchema)
@@ -60,7 +60,7 @@ const types = generateTypes(schema, {
 Generate runtime entity definitions and TypeScript types for the client package.
 
 ```ts
-import { buildSchemaFromDrizzle, generateEntityDefs } from 'graphql-suite/schema'
+import { buildSchemaFromDrizzle, generateEntityDefs } from '@graphql-suite/schema'
 import * as drizzleSchema from './db/schema'
 
 const { schema } = buildSchemaFromDrizzle(drizzleSchema)
@@ -119,7 +119,7 @@ Without `drizzle.importPath`:
 
 3. Use in client:
    ```ts
-   import { createClient } from 'graphql-suite/client'
+   import { createClient } from '@graphql-suite/client'
    import { schema, type EntityDefs } from './generated/entity-defs'
 
    const client = createClient<typeof schema, EntityDefs>({

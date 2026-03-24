@@ -3,7 +3,7 @@
 Next.js App Router integration (`app/api/graphql/route.ts`).
 
 ```ts
-import { buildSchema } from 'graphql-suite/schema'
+import { buildSchema } from '@graphql-suite/schema'
 import { createYoga } from 'graphql-yoga'
 
 import { db } from '@/db'

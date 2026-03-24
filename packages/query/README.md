@@ -33,7 +33,7 @@ Wrap your app with `<GraphQLProvider>` inside a `<QueryClientProvider>`:
 
 ```tsx
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { GraphQLProvider } from 'graphql-suite/query'
+import { GraphQLProvider } from '@graphql-suite/query'
 import { client } from './graphql-client'
 
 const queryClient = new QueryClient()
@@ -54,7 +54,7 @@ function App() {
 Access the raw `GraphQLClient` instance from context:
 
 ```ts
-import { useGraphQLClient } from 'graphql-suite/query'
+import { useGraphQLClient } from '@graphql-suite/query'
 
 function MyComponent() {
   const client = useGraphQLClient()
@@ -67,7 +67,7 @@ function MyComponent() {
 Get a typed `EntityClient` for use with query and mutation hooks:
 
 ```ts
-import { useEntity } from 'graphql-suite/query'
+import { useEntity } from '@graphql-suite/query'
 
 function UserList() {
   const user = useEntity('user')
@@ -84,7 +84,7 @@ Fetch a list of records. Returns `UseQueryResult<T[]>`.
 **Params**: `select`, `where`, `limit`, `offset`, `orderBy`
 
 ```tsx
-import { useEntity, useEntityList } from 'graphql-suite/query'
+import { useEntity, useEntityList } from '@graphql-suite/query'
 
 function UserList() {
   const user = useEntity('user')

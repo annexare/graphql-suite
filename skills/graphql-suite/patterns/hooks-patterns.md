@@ -253,7 +253,7 @@ const hooks = {
 Use the built-in `mergeHooks` to deep-merge multiple `HooksConfig` objects with proper hook chaining:
 
 ```ts
-import { buildSchema, mergeHooks } from 'graphql-suite/schema'
+import { buildSchema, mergeHooks } from '@graphql-suite/schema'
 
 const hooks = mergeHooks(
   authGuard('user'),
@@ -284,7 +284,7 @@ const hooks = mergeHooks(
 Use `withRowSecurity` to generate hooks that inject WHERE clauses for row-level filtering:
 
 ```ts
-import { buildSchema, withRowSecurity, mergeHooks } from 'graphql-suite/schema'
+import { buildSchema, withRowSecurity, mergeHooks } from '@graphql-suite/schema'
 
 const rlsHooks = withRowSecurity({
   posts: (context) => ({ authorId: { eq: context.user.id } }),
@@ -301,7 +301,7 @@ Rules apply `before` hooks on `query`, `querySingle`, `count`, `update`, and `de
 Compose row-level security with authentication hooks:
 
 ```ts
-import { buildSchema, withRowSecurity, mergeHooks } from 'graphql-suite/schema'
+import { buildSchema, withRowSecurity, mergeHooks } from '@graphql-suite/schema'
 
 const rlsHooks = withRowSecurity({
   posts: (context) => ({ authorId: { eq: context.user.id } }),
