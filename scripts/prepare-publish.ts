@@ -252,6 +252,7 @@ async function prepareDeprecatedAlias(name: string) {
     license: srcPkg.license,
     author: srcPkg.author,
     repository: REPOSITORY,
+    homepage: DOCS_URL,
     type: 'module',
     publishConfig: { access: 'public' },
     main: './index.js',
