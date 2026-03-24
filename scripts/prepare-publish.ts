@@ -216,31 +216,22 @@ async function copyLicenseAndReadme(targetDir: string) {
   await Promise.all(writes)
 }
 
-function rewriteScope(
-  deps: Record<string, string> | undefined,
-): Record<string, string> | undefined {
-  if (!deps) return undefined
-  const rewritten: Record<string, string> = {}
-  for (const [dep, range] of Object.entries(deps)) {
-    rewritten[dep.replace('@graphql-suite/', '@drizzle-graphql-suite/')] = range
-  }
-  return rewritten
-}
-
-async function prepareDeprecatedAlias(name: string, catalog: Record<string, string>) {
+async function prepareDeprecatedAlias(name: string) {
   const srcPkg = await Bun.file(join(packagesDir, name, 'package.json')).json()
-  const srcDistDir = join(packagesDir, name, 'dist')
   const aliasDir = join(distDir, '@drizzle-graphql-suite', name)
+  const aliasName = `@drizzle-graphql-suite/${name}`
+  const primaryName = `@graphql-suite/${name}`
 
   await mkdir(aliasDir, { recursive: true })
 
-  const aliasName = `@drizzle-graphql-suite/${name}`
+  // Thin re-export wrapper — delegates entirely to the primary @graphql-suite/* package
+  const reexport = `export * from '${primaryName}'\n`
 
   // biome-ignore lint/suspicious/noExplicitAny: building dynamic object
   const pkg: Record<string, any> = {
     name: aliasName,
     version: srcPkg.version,
-    description: srcPkg.description,
+    description: `[DEPRECATED] Use ${primaryName} instead. ${srcPkg.description}`,
     license: srcPkg.license,
     author: srcPkg.author,
     repository: REPOSITORY,
@@ -254,38 +245,17 @@ async function prepareDeprecatedAlias(name: string, catalog: Record<string, stri
         import: './index.js',
       },
     },
+    dependencies: {
+      [primaryName]: srcPkg.version,
+    },
   }
 
-  const resolvedDeps = rewriteScope(resolveCatalogRefs(srcPkg.dependencies, catalog))
-  if (resolvedDeps) {
-    pkg.dependencies = resolvedDeps
-  }
-
-  const resolvedPeers = rewriteScope(resolveCatalogRefs(srcPkg.peerDependencies, catalog))
-  if (resolvedPeers) {
-    pkg.peerDependencies = resolvedPeers
-  }
-
-  // Copy built artifacts, rewriting banner and keeping @graphql-suite/* imports as-is
-  const aliasBanner = `/** ${aliasName} v${pkg.version} | ${pkg.license} */`
   const writes: Promise<number>[] = [
+    Bun.write(join(aliasDir, 'index.js'), reexport),
+    Bun.write(join(aliasDir, 'index.d.ts'), reexport),
     Bun.write(join(aliasDir, 'package.json'), `${JSON.stringify(pkg, null, 2)}\n`),
-    Bun.write(join(aliasDir, 'README.md'), DEPRECATION_README(`@graphql-suite/${name}`)),
+    Bun.write(join(aliasDir, 'README.md'), DEPRECATION_README(primaryName)),
   ]
-
-  const requiredFiles = ['index.js', 'index.d.ts']
-  for (const file of requiredFiles) {
-    const src = Bun.file(join(srcDistDir, file))
-    if (!(await src.exists())) {
-      throw new Error(
-        `Missing build artifact: ${join(srcDistDir, file)}. Run 'bun run build' first.`,
-      )
-    }
-    let content = await src.text()
-    // Replace the original banner with the alias banner
-    content = content.replace(/^\/\*\*.*?\*\/\n?/, `${aliasBanner}\n`)
-    writes.push(Bun.write(join(aliasDir, file), content))
-  }
 
   const licenseFile = Bun.file(join(rootDir, 'LICENSE'))
   if (await licenseFile.exists()) {
@@ -294,7 +264,7 @@ async function prepareDeprecatedAlias(name: string, catalog: Record<string, stri
 
   await Promise.all(writes)
 
-  console.log(`Prepared ${aliasName} (deprecated alias)`)
+  console.log(`Prepared ${aliasName} (deprecated alias → ${primaryName})`)
 }
 
 async function main() {
@@ -306,7 +276,7 @@ async function main() {
     // Primary packages (@graphql-suite/*)
     ...packageDirs.map((dir) => preparePackage(dir, catalog)),
     // Deprecated aliases (@drizzle-graphql-suite/*)
-    ...PACKAGES.map((name) => prepareDeprecatedAlias(name, catalog)),
+    ...PACKAGES.map((name) => prepareDeprecatedAlias(name)),
     // Umbrella packages
     prepareUmbrellaVariant('graphql-suite', '@graphql-suite'),
     prepareUmbrellaVariant('drizzle-graphql-suite', '@drizzle-graphql-suite'),
