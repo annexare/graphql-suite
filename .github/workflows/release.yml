@@ -33,19 +33,19 @@ jobs:
 
       - name: Publish @graphql-suite packages
         run: |
-          npm publish packages/schema/dist --provenance --access public || true
-          npm publish packages/client/dist --provenance --access public || true
-          npm publish packages/query/dist --provenance --access public || true
-          npm publish dist/graphql-suite --provenance --access public || true
+          npm publish ./packages/schema/dist --provenance --access public || true
+          npm publish ./packages/client/dist --provenance --access public || true
+          npm publish ./packages/query/dist --provenance --access public || true
+          npm publish ./dist/graphql-suite --provenance --access public || true
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Publish deprecated @drizzle-graphql-suite aliases
         run: |
-          npm publish dist/@drizzle-graphql-suite/schema --provenance --access public || true
-          npm publish dist/@drizzle-graphql-suite/client --provenance --access public || true
-          npm publish dist/@drizzle-graphql-suite/query --provenance --access public || true
-          npm publish dist/drizzle-graphql-suite --provenance --access public || true
+          npm publish ./dist/@drizzle-graphql-suite/schema --provenance --access public || true
+          npm publish ./dist/@drizzle-graphql-suite/client --provenance --access public || true
+          npm publish ./dist/@drizzle-graphql-suite/query --provenance --access public || true
+          npm publish ./dist/drizzle-graphql-suite --provenance --access public || true
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
