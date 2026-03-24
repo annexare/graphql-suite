@@ -33,19 +33,39 @@ jobs:
 
       - name: Publish @graphql-suite packages
         run: |
-          npm publish ./packages/schema/dist --provenance --access public || true
-          npm publish ./packages/client/dist --provenance --access public || true
-          npm publish ./packages/query/dist --provenance --access public || true
-          npm publish ./dist/graphql-suite --provenance --access public || true
+          publish() {
+            local dir=$1
+            local name=$(jq -r .name "$dir/package.json")
+            local version=$(jq -r .version "$dir/package.json")
+            if npm view "$name@$version" version 2>/dev/null; then
+              echo "⏭️  $name@$version already published, skipping"
+            else
+              npm publish "$dir" --provenance --access public
+            fi
+          }
+          publish ./packages/schema/dist
+          publish ./packages/client/dist
+          publish ./packages/query/dist
+          publish ./dist/graphql-suite
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Publish deprecated @drizzle-graphql-suite aliases
         run: |
-          npm publish ./dist/@drizzle-graphql-suite/schema --provenance --access public || true
-          npm publish ./dist/@drizzle-graphql-suite/client --provenance --access public || true
-          npm publish ./dist/@drizzle-graphql-suite/query --provenance --access public || true
-          npm publish ./dist/drizzle-graphql-suite --provenance --access public || true
+          publish() {
+            local dir=$1
+            local name=$(jq -r .name "$dir/package.json")
+            local version=$(jq -r .version "$dir/package.json")
+            if npm view "$name@$version" version 2>/dev/null; then
+              echo "⏭️  $name@$version already published, skipping"
+            else
+              npm publish "$dir" --provenance --access public
+            fi
+          }
+          publish ./dist/@drizzle-graphql-suite/schema
+          publish ./dist/@drizzle-graphql-suite/client
+          publish ./dist/@drizzle-graphql-suite/query
+          publish ./dist/drizzle-graphql-suite
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
