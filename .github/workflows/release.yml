@@ -11,6 +11,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       id-token: write
+      contents: read
+      deployments: write
     steps:
       - uses: actions/checkout@v6
 
@@ -47,3 +49,12 @@ jobs:
           npm publish dist/drizzle-graphql-suite --provenance --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Build & deploy docs
+        run: bun run --filter docs build
+
+      - uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy apps/docs/dist --project-name=graphql-suite --branch=main
