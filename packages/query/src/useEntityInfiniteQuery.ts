@@ -4,7 +4,7 @@ import type {
   EntityDef,
   EntityDefsRef,
   InferResult,
-} from '@drizzle-graphql-suite/client'
+} from '@graphql-suite/client'
 import { type UseInfiniteQueryResult, useInfiniteQuery } from '@tanstack/react-query'
 
 type EntityInfiniteParams<TEntity extends EntityDef, TSelect extends Record<string, unknown>> = {

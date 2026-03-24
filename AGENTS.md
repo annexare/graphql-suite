@@ -28,8 +28,8 @@ bun run test
 
 # Run tests for a single package
 bun test                                    # in a package directory
-bun run --filter '@drizzle-graphql-suite/schema' test
-bun run --filter '@drizzle-graphql-suite/client' test
+bun run --filter '@graphql-suite/schema' test
+bun run --filter '@graphql-suite/client' test
 
 # Run a single test file
 bun test packages/schema/src/schema-builder.test.ts
@@ -44,9 +44,9 @@ Build order matters: `schema` and `client` must build before `query` (query depe
 
 ```
 packages/
-  schema/   -> @drizzle-graphql-suite/schema   (peer: drizzle-orm, graphql)
-  client/   -> @drizzle-graphql-suite/client   (peer: drizzle-orm)
-  query/    -> @drizzle-graphql-suite/query    (peer: react, @tanstack/react-query)
+  schema/   -> @graphql-suite/schema   (peer: drizzle-orm, graphql)
+  client/   -> @graphql-suite/client   (peer: drizzle-orm)
+  query/    -> @graphql-suite/query    (peer: react, @tanstack/react-query)
 ```
 
 Each package has `src/index.ts` as entry point, builds with `bun build` to `dist/`, and emits `.d.ts` via `tsc -p tsconfig.build.json`.
@@ -77,8 +77,8 @@ import { relations } from 'drizzle-orm'
 import { pgTable, text, uuid } from 'drizzle-orm/pg-core'
 import type { GraphQLSchema } from 'graphql'
 
-// 2. Aliases (path aliases like drizzle-graphql-suite/client)
-import type { AnyEntityDefs } from 'drizzle-graphql-suite/client'
+// 2. Aliases (path aliases like graphql-suite/client)
+import type { AnyEntityDefs } from 'graphql-suite/client'
 
 // 3. Relative paths
 import { SchemaBuilder } from './schema-builder'
@@ -108,7 +108,7 @@ import type { BuildSchemaConfig } from './types'
 
 ### Error Handling
 
-- Throw descriptive `Error` with `"Drizzle-GraphQL Error: ..."` prefix in schema package
+- Throw descriptive `Error` with `"GraphQL-Suite Error: ..."` prefix in schema package
 - Use custom error classes for client errors: `GraphQLClientError`, `NetworkError`
 - In GraphQL resolvers, catch errors and re-throw as `GraphQLError`
 - Pattern for resolver error handling:

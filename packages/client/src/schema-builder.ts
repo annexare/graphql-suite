@@ -1,4 +1,4 @@
-import type { BuildSchemaConfig } from '@drizzle-graphql-suite/schema'
+import type { BuildSchemaConfig } from '@graphql-suite/schema'
 import { getTableColumns, getTableName, is, Many, One, Relations, Table } from 'drizzle-orm'
 
 import type { SchemaDescriptor } from './types'

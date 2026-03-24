@@ -1,6 +1,6 @@
 # Permissions Reference
 
-`@drizzle-graphql-suite/schema` — Runtime permissions, row-level security, and hook composition.
+`@graphql-suite/schema` — Runtime permissions, row-level security, and hook composition.
 
 ## Permission Helpers
 
@@ -9,7 +9,7 @@
 Create a permissive permission config. All tables are allowed by default; entries in `tables` deny or restrict access.
 
 ```ts
-import { permissive, readOnly } from 'drizzle-graphql-suite/schema'
+import { permissive, readOnly } from 'graphql-suite/schema'
 
 const config = permissive('maintainer', {
   audit: false,          // exclude entirely
@@ -31,7 +31,7 @@ function permissive(
 Create a restricted permission config. Nothing is allowed by default; entries in `tables` grant access.
 
 ```ts
-import { restricted } from 'drizzle-graphql-suite/schema'
+import { restricted } from 'graphql-suite/schema'
 
 const config = restricted('viewer', {
   posts: { query: true },
@@ -52,7 +52,7 @@ function restricted(
 Shorthand for a `TableAccess` that allows queries but disables all mutations.
 
 ```ts
-import { readOnly } from 'drizzle-graphql-suite/schema'
+import { readOnly } from 'graphql-suite/schema'
 
 readOnly()
 // Returns: { query: true, insert: false, update: false, delete: false }
@@ -187,7 +187,7 @@ The filtered schema fully reflects permissions in GraphQL introspection:
 Generate a `HooksConfig` that injects WHERE clauses for row-level filtering. Rules are applied as `before` hooks on `query`, `querySingle`, `count`, `update`, and `delete` operations (not `insert` or `insertSingle`).
 
 ```ts
-import { withRowSecurity } from 'drizzle-graphql-suite/schema'
+import { withRowSecurity } from 'graphql-suite/schema'
 
 const rlsHooks = withRowSecurity({
   posts: (context) => ({ authorId: { eq: context.user.id } }),
@@ -211,7 +211,7 @@ Each rule function receives the GraphQL `context` and returns a filter object ma
 Deep-merge multiple `HooksConfig` objects with proper hook chaining.
 
 ```ts
-import { mergeHooks, withRowSecurity } from 'drizzle-graphql-suite/schema'
+import { mergeHooks, withRowSecurity } from 'graphql-suite/schema'
 
 const hooks = mergeHooks(
   withRowSecurity({ posts: (ctx) => ({ authorId: { eq: ctx.user.id } }) }),

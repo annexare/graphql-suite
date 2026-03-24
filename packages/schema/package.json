@@ -1,16 +1,16 @@
 {
-  "name": "@drizzle-graphql-suite/schema",
-  "version": "0.8.3",
+  "name": "@graphql-suite/schema",
+  "version": "0.9.0",
   "type": "module",
   "description": "GraphQL schema builder with CRUD operations, relation filtering, and hooks from Drizzle ORM",
   "license": "MIT",
   "author": "https://github.com/dmythro",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/annexare/drizzle-graphql-suite.git",
+    "url": "git+https://github.com/annexare/graphql-suite.git",
     "directory": "packages/schema"
   },
-  "homepage": "https://github.com/annexare/drizzle-graphql-suite/tree/main/packages/schema#readme",
+  "homepage": "https://graphql-suite.annexare.com/schema/overview/",
   "keywords": [
     "drizzle",
     "graphql",

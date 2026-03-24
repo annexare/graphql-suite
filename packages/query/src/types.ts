@@ -1,4 +1,4 @@
-import type { AnyEntityDefs, GraphQLClient, SchemaDescriptor } from '@drizzle-graphql-suite/client'
+import type { AnyEntityDefs, GraphQLClient, SchemaDescriptor } from '@graphql-suite/client'
 
 export type GraphQLClientContext<
   TSchema extends SchemaDescriptor = SchemaDescriptor,

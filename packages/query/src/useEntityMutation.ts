@@ -4,7 +4,7 @@ import type {
   EntityDef,
   EntityDefsRef,
   InferResult,
-} from '@drizzle-graphql-suite/client'
+} from '@graphql-suite/client'
 import { type UseMutationResult, useMutation, useQueryClient } from '@tanstack/react-query'
 
 // ─── Insert ────────────────────────────────────────────────

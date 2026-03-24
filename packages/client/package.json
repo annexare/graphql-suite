@@ -1,16 +1,16 @@
 {
-  "name": "@drizzle-graphql-suite/client",
-  "version": "0.8.3",
+  "name": "@graphql-suite/client",
+  "version": "0.9.0",
   "type": "module",
   "description": "Type-safe GraphQL client with entity-based API and full Drizzle type inference",
   "license": "MIT",
   "author": "https://github.com/dmythro",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/annexare/drizzle-graphql-suite.git",
+    "url": "git+https://github.com/annexare/graphql-suite.git",
     "directory": "packages/client"
   },
-  "homepage": "https://github.com/annexare/drizzle-graphql-suite/tree/main/packages/client#readme",
+  "homepage": "https://graphql-suite.annexare.com/client/overview/",
   "keywords": [
     "drizzle",
     "graphql",
@@ -31,7 +31,7 @@
     "test": "bun test"
   },
   "peerDependencies": {
-    "@drizzle-graphql-suite/schema": ">=0.8.0",
+    "@graphql-suite/schema": ">=0.8.0",
     "drizzle-orm": ">=0.44.0"
   },
   "devDependencies": {

@@ -265,6 +265,6 @@ describe('generic PgArray', () => {
 describe('unknown type', () => {
   test('throws for unimplemented dataType', () => {
     const fakeCol = { dataType: 'xml', notNull: false } as unknown as import('drizzle-orm').Column
-    expect(() => drizzleColumnToGraphQLType(fakeCol, 'x', 'tbl')).toThrow('Drizzle-GraphQL Error')
+    expect(() => drizzleColumnToGraphQLType(fakeCol, 'x', 'tbl')).toThrow('GraphQL-Suite Error')
   })
 })

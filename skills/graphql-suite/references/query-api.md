@@ -1,6 +1,6 @@
 # Query API Reference
 
-`@drizzle-graphql-suite/query` — TanStack React Query hooks for the drizzle-graphql-suite client.
+`@graphql-suite/query` — TanStack React Query hooks for the graphql-suite client.
 
 ## Provider
 
@@ -9,7 +9,7 @@
 Provides the `GraphQLClient` to all hooks via React context. Must be nested inside `<QueryClientProvider>`.
 
 ```tsx
-import { GraphQLProvider } from 'drizzle-graphql-suite/query'
+import { GraphQLProvider } from 'graphql-suite/query'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
 const queryClient = new QueryClient()

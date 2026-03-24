@@ -165,7 +165,7 @@ export class SchemaBuilder {
     const schema = db._.fullSchema
     if (!schema) {
       throw new Error(
-        "Drizzle-GraphQL Error: Schema not found in drizzle instance. Make sure you're using drizzle-orm v0.30.9 or above and schema is passed to drizzle constructor!",
+        "GraphQL-Suite Error: Schema not found in drizzle instance. Make sure you're using drizzle-orm v0.30.9 or above and schema is passed to drizzle constructor!",
       )
     }
 
@@ -177,7 +177,7 @@ export class SchemaBuilder {
     if (typeof this.limitRelationDepth === 'number') {
       if (this.limitRelationDepth < 0 || this.limitRelationDepth !== ~~this.limitRelationDepth) {
         throw new Error(
-          'Drizzle-GraphQL Error: config.limitRelationDepth is supposed to be nonnegative integer or undefined!',
+          'GraphQL-Suite Error: config.limitRelationDepth is supposed to be nonnegative integer or undefined!',
         )
       }
     }
@@ -187,13 +187,13 @@ export class SchemaBuilder {
       this.limitSelfRelationDepth !== ~~this.limitSelfRelationDepth
     ) {
       throw new Error(
-        'Drizzle-GraphQL Error: config.limitSelfRelationDepth must be a positive integer!',
+        'GraphQL-Suite Error: config.limitSelfRelationDepth must be a positive integer!',
       )
     }
 
     if (this.suffixes.list === this.suffixes.single) {
       throw new Error(
-        'Drizzle-GraphQL Error: List and single query suffixes cannot be the same. This would create conflicting GraphQL field names.',
+        'GraphQL-Suite Error: List and single query suffixes cannot be the same. This would create conflicting GraphQL field names.',
       )
     }
 
@@ -471,7 +471,7 @@ export class SchemaBuilder {
 
     if (!entries.length) {
       throw new Error(
-        "Drizzle-GraphQL Error: No tables detected in Drizzle-ORM's database instance. Did you forget to pass schema to drizzle constructor?",
+        "GraphQL-Suite Error: No tables detected in Drizzle-ORM's database instance. Did you forget to pass schema to drizzle constructor?",
       )
     }
 
@@ -481,7 +481,7 @@ export class SchemaBuilder {
   private getTable(tableName: string): PgTable {
     const table = this.tables[tableName]
     if (!table) {
-      throw new Error(`Drizzle-GraphQL Error: Table '${tableName}' not found.`)
+      throw new Error(`GraphQL-Suite Error: Table '${tableName}' not found.`)
     }
     return table
   }
@@ -897,7 +897,7 @@ export class SchemaBuilder {
       RelationalQueryBuilder<any, any> | undefined
     if (!queryBase) {
       throw new Error(
-        `Drizzle-GraphQL Error: Table ${tableName} not found in drizzle instance. Did you forget to pass schema to drizzle constructor?`,
+        `GraphQL-Suite Error: Table ${tableName} not found in drizzle instance. Did you forget to pass schema to drizzle constructor?`,
       )
     }
 
@@ -973,7 +973,7 @@ export class SchemaBuilder {
       RelationalQueryBuilder<any, any> | undefined
     if (!queryBase) {
       throw new Error(
-        `Drizzle-GraphQL Error: Table ${tableName} not found in drizzle instance. Did you forget to pass schema to drizzle constructor?`,
+        `GraphQL-Suite Error: Table ${tableName} not found in drizzle instance. Did you forget to pass schema to drizzle constructor?`,
       )
     }
 

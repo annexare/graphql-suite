@@ -1,6 +1,6 @@
 'use client'
 
-import type { AnyEntityDefs, GraphQLClient, SchemaDescriptor } from '@drizzle-graphql-suite/client'
+import type { AnyEntityDefs, GraphQLClient, SchemaDescriptor } from '@graphql-suite/client'
 import { createContext, type ReactNode, useContext } from 'react'
 
 // biome-ignore lint/suspicious/noExplicitAny: context default is null, typed at consumption site

@@ -122,8 +122,8 @@ export type RelationPruneRule = false | 'leaf' | { only: string[] }
 
 /**
  * Configuration for both the GraphQL schema builder (server) and the
- * type-safe client. Shared across `drizzle-graphql-suite/schema` and
- * `drizzle-graphql-suite/client` so a single config object drives both
+ * type-safe client. Shared across `graphql-suite/schema` and
+ * `graphql-suite/client` so a single config object drives both
  * the runtime schema and the inferred TypeScript types.
  *
  * @example

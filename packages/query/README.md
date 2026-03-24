@@ -1,28 +1,28 @@
-# @drizzle-graphql-suite/query
+# @graphql-suite/query
 
-> Part of [`drizzle-graphql-suite`](https://github.com/annexare/drizzle-graphql-suite).
+> Part of [`graphql-suite`](https://github.com/annexare/graphql-suite).
 > See also: [`schema`](../schema/README.md) | [`client`](../client/README.md)
 
-TanStack React Query hooks for `drizzle-graphql-suite/client` — type-safe data fetching with caching, pagination, and mutations.
+TanStack React Query hooks for `graphql-suite/client` — type-safe data fetching with caching, pagination, and mutations.
 
 ## Installation
 
 ```bash
-bun add @drizzle-graphql-suite/query
+bun add @graphql-suite/query
 ```
 
 ```bash
-npm install @drizzle-graphql-suite/query
+npm install @graphql-suite/query
 ```
 
 Or install the full suite:
 
 ```bash
-bun add drizzle-graphql-suite
+bun add graphql-suite
 ```
 
 ```bash
-npm install drizzle-graphql-suite
+npm install graphql-suite
 ```
 
 ## Setup
@@ -33,7 +33,7 @@ Wrap your app with `<GraphQLProvider>` inside a `<QueryClientProvider>`:
 
 ```tsx
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { GraphQLProvider } from 'drizzle-graphql-suite/query'
+import { GraphQLProvider } from 'graphql-suite/query'
 import { client } from './graphql-client'
 
 const queryClient = new QueryClient()
@@ -54,7 +54,7 @@ function App() {
 Access the raw `GraphQLClient` instance from context:
 
 ```ts
-import { useGraphQLClient } from 'drizzle-graphql-suite/query'
+import { useGraphQLClient } from 'graphql-suite/query'
 
 function MyComponent() {
   const client = useGraphQLClient()
@@ -67,7 +67,7 @@ function MyComponent() {
 Get a typed `EntityClient` for use with query and mutation hooks:
 
 ```ts
-import { useEntity } from 'drizzle-graphql-suite/query'
+import { useEntity } from 'graphql-suite/query'
 
 function UserList() {
   const user = useEntity('user')
@@ -84,7 +84,7 @@ Fetch a list of records. Returns `UseQueryResult<T[]>`.
 **Params**: `select`, `where`, `limit`, `offset`, `orderBy`
 
 ```tsx
-import { useEntity, useEntityList } from 'drizzle-graphql-suite/query'
+import { useEntity, useEntityList } from 'graphql-suite/query'
 
 function UserList() {
   const user = useEntity('user')

@@ -30,20 +30,20 @@ jobs:
       - run: bun run test
       - run: bun run prepare-publish
 
-      - name: Publish @drizzle-graphql-suite packages
+      - name: Publish @graphql-suite packages
         run: |
           npm publish packages/schema/dist --provenance --access public
           npm publish packages/client/dist --provenance --access public
           npm publish packages/query/dist --provenance --access public
-          npm publish dist/drizzle-graphql-suite --provenance --access public
+          npm publish dist/graphql-suite --provenance --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      - name: Publish @graphql-suite packages
+      - name: Publish deprecated @drizzle-graphql-suite aliases
         run: |
-          npm publish dist/@graphql-suite/schema --provenance --access public
-          npm publish dist/@graphql-suite/client --provenance --access public
-          npm publish dist/@graphql-suite/query --provenance --access public
-          npm publish dist/graphql-suite --provenance --access public
+          npm publish dist/@drizzle-graphql-suite/schema --provenance --access public
+          npm publish dist/@drizzle-graphql-suite/client --provenance --access public
+          npm publish dist/@drizzle-graphql-suite/query --provenance --access public
+          npm publish dist/drizzle-graphql-suite --provenance --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

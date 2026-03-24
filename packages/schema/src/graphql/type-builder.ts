@@ -158,7 +158,7 @@ const columnToGraphQLCore = (
       }
     }
     default:
-      throw new Error(`Drizzle-GraphQL Error: Type ${column.dataType} is not implemented!`)
+      throw new Error(`GraphQL-Suite Error: Type ${column.dataType} is not implemented!`)
   }
 }
 

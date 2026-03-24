@@ -1,9 +1,9 @@
 ---
-name: drizzle-graphql-suite
+name: graphql-suite
 description: Build GraphQL APIs from Drizzle PostgreSQL schemas with auto-generated CRUD, type-safe clients, and React Query hooks. Use when creating GraphQL servers from Drizzle ORM tables, building type-safe GraphQL clients, adding React data-fetching hooks with TanStack Query, or generating GraphQL SDL/types from Drizzle schemas.
 ---
 
-# drizzle-graphql-suite
+# graphql-suite
 
 Three-layer toolkit that turns Drizzle ORM PostgreSQL schemas into fully working GraphQL APIs with end-to-end type safety.
 
@@ -11,9 +11,9 @@ Three-layer toolkit that turns Drizzle ORM PostgreSQL schemas into fully working
 
 | Import | Package | Purpose |
 |--------|---------|---------|
-| `drizzle-graphql-suite/schema` | `@drizzle-graphql-suite/schema` | Server-side GraphQL schema builder with CRUD, filtering, hooks, and codegen |
-| `drizzle-graphql-suite/client` | `@drizzle-graphql-suite/client` | Type-safe GraphQL client with entity-based API |
-| `drizzle-graphql-suite/query` | `@drizzle-graphql-suite/query` | TanStack React Query hooks wrapping the client |
+| `graphql-suite/schema` | `@graphql-suite/schema` | Server-side GraphQL schema builder with CRUD, filtering, hooks, and codegen |
+| `graphql-suite/client` | `@graphql-suite/client` | Type-safe GraphQL client with entity-based API |
+| `graphql-suite/query` | `@graphql-suite/query` | TanStack React Query hooks wrapping the client |
 
 **Data flow:** Drizzle schema -> `buildSchema()` -> GraphQL server -> `createDrizzleClient()` -> `<GraphQLProvider>` + hooks
 
@@ -26,7 +26,7 @@ Three-layer toolkit that turns Drizzle ORM PostgreSQL schemas into fully working
 
 Use this skill when the user is:
 - Creating a GraphQL server from Drizzle ORM table definitions
-- Building type-safe GraphQL clients for a drizzle-graphql-suite server
+- Building type-safe GraphQL clients for a graphql-suite server
 - Adding React data-fetching with TanStack Query for GraphQL
 - Generating GraphQL SDL or static TypeScript types when client and server are in separate repos
 - Configuring hooks, table exclusion, relation depth, or operation filtering
@@ -69,7 +69,7 @@ export const postRelations = relations(post, ({ one }) => ({
 ### 2. Build GraphQL Server
 
 ```ts
-import { buildSchema } from 'drizzle-graphql-suite/schema'
+import { buildSchema } from 'graphql-suite/schema'
 import { createYoga } from 'graphql-yoga'
 import { createServer } from 'node:http'
 import { db } from './db'
@@ -94,7 +94,7 @@ createServer(yoga).listen(4000)
 ### 3. Create Type-Safe Client
 
 ```ts
-import { createDrizzleClient } from 'drizzle-graphql-suite/client'
+import { createDrizzleClient } from 'graphql-suite/client'
 import * as schema from './db/schema'
 
 const client = createDrizzleClient({
@@ -114,7 +114,7 @@ const users = await client.entity('user').query({
 ### 4. Add React Hooks
 
 ```tsx
-import { GraphQLProvider, useEntity, useEntityList } from 'drizzle-graphql-suite/query'
+import { GraphQLProvider, useEntity, useEntityList } from 'graphql-suite/query'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
 const queryClient = new QueryClient()
@@ -143,7 +143,7 @@ function UserList() {
 
 ## Core API
 
-### Schema Package (`drizzle-graphql-suite/schema`)
+### Schema Package (`graphql-suite/schema`)
 
 ```ts
 // Build complete GraphQL schema from Drizzle db instance
@@ -173,7 +173,7 @@ generateEntityDefs(schema, options?): string           // Runtime entity descrip
 GraphQLJSON  // JSON scalar type for json/jsonb columns
 ```
 
-### Client Package (`drizzle-graphql-suite/client`)
+### Client Package (`graphql-suite/client`)
 
 ```ts
 // Recommended: create client from Drizzle schema (full type inference)
@@ -202,7 +202,7 @@ NetworkError        // HTTP/network failures (has .status)
 | `update({ set, where?, returning? })` | Update matching rows |
 | `delete({ where?, returning? })` | Delete matching rows |
 
-### Query Package (`drizzle-graphql-suite/query`)
+### Query Package (`graphql-suite/query`)
 
 ```tsx
 // Provider (wrap app)
@@ -316,7 +316,7 @@ See [patterns/hooks-patterns.md](patterns/hooks-patterns.md) for common recipes.
 Build filtered `GraphQLSchema` variants per role or user — introspection fully reflects what each role can see and do.
 
 ```ts
-import { buildSchema, permissive, restricted, readOnly } from 'drizzle-graphql-suite/schema'
+import { buildSchema, permissive, restricted, readOnly } from 'graphql-suite/schema'
 
 const { schema, withPermissions } = buildSchema(db)
 
@@ -371,7 +371,7 @@ See [references/permissions.md](references/permissions.md) for full API details 
 Generate hooks that inject WHERE clauses for row-level filtering. Compose with other hooks using `mergeHooks`.
 
 ```ts
-import { buildSchema, withRowSecurity, mergeHooks } from 'drizzle-graphql-suite/schema'
+import { buildSchema, withRowSecurity, mergeHooks } from 'graphql-suite/schema'
 
 const { schema } = buildSchema(db, {
   hooks: mergeHooks(
@@ -429,14 +429,14 @@ where: {
 
 Errors thrown in hooks or resolvers are caught and re-thrown as `GraphQLError`:
 ```ts
-// Errors are prefixed: "Drizzle-GraphQL Error: ..."
+// Errors are prefixed: "GraphQL-Suite Error: ..."
 // In custom hooks, throw standard Error — it will be wrapped in GraphQLError
 ```
 
 ### Client
 
 ```ts
-import { GraphQLClientError, NetworkError } from 'drizzle-graphql-suite/client'
+import { GraphQLClientError, NetworkError } from 'graphql-suite/client'
 
 try {
   await client.entity('user').query({ select: { id: true } })

@@ -15,7 +15,7 @@ export default defineConfig({
         {
           icon: 'github',
           label: 'GitHub',
-          href: 'https://github.com/annexare/drizzle-graphql-suite',
+          href: 'https://github.com/annexare/graphql-suite',
         },
       ],
       sidebar: [

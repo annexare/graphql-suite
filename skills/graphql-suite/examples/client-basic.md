@@ -3,7 +3,7 @@
 Type-safe GraphQL client with all 7 entity operations.
 
 ```ts
-import { createDrizzleClient, GraphQLClientError, NetworkError } from 'drizzle-graphql-suite/client'
+import { createDrizzleClient, GraphQLClientError, NetworkError } from 'graphql-suite/client'
 
 import * as schema from './db/schema'
 

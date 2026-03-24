@@ -21,6 +21,6 @@ GraphQL Suite turns Drizzle ORM table definitions into a production-ready GraphQ
 
 ## Links
 
-- Source: https://github.com/annexare/drizzle-graphql-suite
+- Source: https://github.com/annexare/graphql-suite
 - npm: https://www.npmjs.com/org/graphql-suite
 - Docs: https://graphql-suite.annexare.com

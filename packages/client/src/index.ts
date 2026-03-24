@@ -8,7 +8,7 @@ export function createClient<
   return new GraphQLClient<TSchema, TDefs>(config)
 }
 
-export type { BuildSchemaConfig } from '@drizzle-graphql-suite/schema'
+export type { BuildSchemaConfig } from '@graphql-suite/schema'
 
 export type { DrizzleClientConfig } from './client'
 export { createDrizzleClient, GraphQLClient } from './client'

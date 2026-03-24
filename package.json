@@ -1,6 +1,6 @@
 {
-  "name": "drizzle-graphql-suite",
-  "version": "0.8.3",
+  "name": "graphql-suite",
+  "version": "0.9.0",
   "description": "Auto-generated GraphQL CRUD, type-safe clients, and React Query hooks from Drizzle PostgreSQL schemas",
   "author": "https://github.com/dmythro",
   "license": "MIT",
@@ -21,11 +21,11 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/annexare/drizzle-graphql-suite.git"
+    "url": "git+https://github.com/annexare/graphql-suite.git"
   },
-  "homepage": "https://github.com/annexare/drizzle-graphql-suite#readme",
+  "homepage": "https://graphql-suite.annexare.com",
   "bugs": {
-    "url": "https://github.com/annexare/drizzle-graphql-suite/issues"
+    "url": "https://github.com/annexare/graphql-suite/issues"
   },
   "type": "module",
   "files": [
@@ -53,9 +53,9 @@
     }
   },
   "dependencies": {
-    "@drizzle-graphql-suite/client": "0.8.3",
-    "@drizzle-graphql-suite/query": "0.8.3",
-    "@drizzle-graphql-suite/schema": "0.8.3",
+    "@graphql-suite/client": "0.9.0",
+    "@graphql-suite/query": "0.9.0",
+    "@graphql-suite/schema": "0.9.0",
     "graphql": "catalog:"
   },
   "workspaces": {
@@ -79,7 +79,7 @@
     }
   },
   "scripts": {
-    "build": "bun run --filter '@drizzle-graphql-suite/schema' build && bun run --filter '@drizzle-graphql-suite/client' build && bun run --filter '@drizzle-graphql-suite/query' build",
+    "build": "bun run --filter '@graphql-suite/schema' build && bun run --filter '@graphql-suite/client' build && bun run --filter '@graphql-suite/query' build",
     "check": "bun run check-types && bun run lint:check && bun run test",
     "check-types": "bun run --filter '*' check-types",
     "ci": "bun run check-types && bun run lint:check && bun run test",
@@ -87,8 +87,8 @@
     "lint": "bunx @biomejs/biome check --write .",
     "lint:check": "bunx @biomejs/biome check .",
     "prepare-publish": "bun run scripts/prepare-publish.ts",
-    "publish-all": "npm publish packages/schema/dist && npm publish packages/client/dist && npm publish packages/query/dist && npm publish dist/@graphql-suite/schema && npm publish dist/@graphql-suite/client && npm publish dist/@graphql-suite/query && npm publish dist/drizzle-graphql-suite && npm publish dist/graphql-suite",
-    "publish-new": "npm publish dist/@graphql-suite/schema && npm publish dist/@graphql-suite/client && npm publish dist/@graphql-suite/query && npm publish dist/graphql-suite",
+    "publish-all": "npm publish packages/schema/dist && npm publish packages/client/dist && npm publish packages/query/dist && npm publish dist/@drizzle-graphql-suite/schema && npm publish dist/@drizzle-graphql-suite/client && npm publish dist/@drizzle-graphql-suite/query && npm publish dist/graphql-suite && npm publish dist/drizzle-graphql-suite",
+    "publish-new": "npm publish packages/schema/dist && npm publish packages/client/dist && npm publish packages/query/dist && npm publish dist/graphql-suite",
     "release": "bun run build && bun run prepare-publish",
     "test": "bun run --filter '*' test",
     "version": "bun run scripts/version-bump.ts"

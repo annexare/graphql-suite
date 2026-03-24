@@ -5,9 +5,9 @@
     "": {
       "name": "drizzle-graphql-suite",
       "dependencies": {
-        "@drizzle-graphql-suite/client": "0.8.3",
-        "@drizzle-graphql-suite/query": "0.8.3",
-        "@drizzle-graphql-suite/schema": "0.8.3",
+        "@graphql-suite/client": "0.9.0",
+        "@graphql-suite/query": "0.9.0",
+        "@graphql-suite/schema": "0.9.0",
         "graphql": "catalog:",
       },
       "devDependencies": {
@@ -49,8 +49,20 @@
       },
     },
     "packages/client": {
+      "name": "@graphql-suite/client",
+      "version": "0.9.0",
+      "devDependencies": {
+        "@types/bun": "catalog:",
+        "drizzle-orm": "catalog:",
+        "typescript": "catalog:",
+      },
+      "peerDependencies": {
+        "@graphql-suite/schema": ">=0.8.0",
+        "drizzle-orm": ">=0.44.0",
+      },
+    },
+    "packages/client": {
       "name": "@drizzle-graphql-suite/client",
-      "version": "0.8.3",
       "devDependencies": {
         "@types/bun": "catalog:",
         "drizzle-orm": "catalog:",
@@ -62,8 +74,26 @@
       },
     },
     "packages/query": {
+      "name": "@graphql-suite/query",
+      "version": "0.9.0",
+      "devDependencies": {
+        "@tanstack/react-query": "catalog:",
+        "@types/bun": "catalog:",
+        "@types/react": "catalog:",
+        "@types/react-dom": "catalog:",
+        "linkedom": "catalog:",
+        "react": "catalog:",
+        "react-dom": "catalog:",
+        "typescript": "catalog:",
+      },
+      "peerDependencies": {
+        "@graphql-suite/client": ">=0.7.0",
+        "@tanstack/react-query": ">=5.0.0",
+        "react": ">=18.0.0",
+      },
+    },
+    "packages/query": {
       "name": "@drizzle-graphql-suite/query",
-      "version": "0.8.3",
       "devDependencies": {
         "@tanstack/react-query": "catalog:",
         "@types/bun": "catalog:",
@@ -81,8 +111,24 @@
       },
     },
     "packages/schema": {
+      "name": "@graphql-suite/schema",
+      "version": "0.9.0",
+      "dependencies": {
+        "graphql-parse-resolve-info": "catalog:",
+      },
+      "devDependencies": {
+        "@types/bun": "catalog:",
+        "drizzle-orm": "catalog:",
+        "graphql": "catalog:",
+        "typescript": "catalog:",
+      },
+      "peerDependencies": {
+        "drizzle-orm": ">=0.44.0",
+        "graphql": ">=16.3.0",
+      },
+    },
+    "packages/schema": {
       "name": "@drizzle-graphql-suite/schema",
-      "version": "0.8.3",
       "dependencies": {
         "graphql-parse-resolve-info": "catalog:",
       },
@@ -167,8 +213,6 @@
 
     "@drizzle-graphql-suite/client": ["@drizzle-graphql-suite/client@workspace:packages/client"],
 
-    "@drizzle-graphql-suite/query": ["@drizzle-graphql-suite/query@workspace:packages/query"],
-
     "@drizzle-graphql-suite/schema": ["@drizzle-graphql-suite/schema@workspace:packages/schema"],
 
     "@drizzle-team/brocli": ["@drizzle-team/brocli@0.10.2", "", {}, "sha512-z33Il7l5dKjUgGULTqBsQBQwckHh5AbIuxhdsIxDDiZAzBOrZO6q9ogcWC65kU382AfynTfgNumVcNIjuIua6w=="],
@@ -247,11 +291,11 @@
 
     "@fastify/busboy": ["@fastify/busboy@3.2.0", "", {}, "sha512-m9FVDXU3GT2ITSe0UaMA5rU3QkfC/UXtCU8y0gSN/GugTqtVldOBWIB5V6V3sbmenVZUIpU6f+mPEO2+m5iTaA=="],
 
-    "@graphql-suite/client": ["@drizzle-graphql-suite/client@workspace:packages/client"],
+    "@graphql-suite/client": ["@graphql-suite/client@workspace:packages/client"],
 
-    "@graphql-suite/query": ["@drizzle-graphql-suite/query@workspace:packages/query"],
+    "@graphql-suite/query": ["@graphql-suite/query@workspace:packages/query"],
 
-    "@graphql-suite/schema": ["@drizzle-graphql-suite/schema@workspace:packages/schema"],
+    "@graphql-suite/schema": ["@graphql-suite/schema@workspace:packages/schema"],
 
     "@graphql-tools/executor": ["@graphql-tools/executor@1.5.1", "", { "dependencies": { "@graphql-tools/utils": "^11.0.0", "@graphql-typed-document-node/core": "^3.2.0", "@repeaterjs/repeater": "^3.0.4", "@whatwg-node/disposablestack": "^0.0.6", "@whatwg-node/promise-helpers": "^1.0.0", "tslib": "^2.4.0" }, "peerDependencies": { "graphql": "^14.0.0 || ^15.0.0 || ^16.0.0 || ^17.0.0" } }, "sha512-n94Qcu875Mji9GQ52n5UbgOTxlgvFJicBPYD+FRks9HKIQpdNPjkkrKZUYNG51XKa+bf03rxNflm4+wXhoHHrA=="],
 
@@ -1096,6 +1140,12 @@
     "drizzle-kit/esbuild": ["esbuild@0.25.12", "", { "optionalDependencies": { "@esbuild/aix-ppc64": "0.25.12", "@esbuild/android-arm": "0.25.12", "@esbuild/android-arm64": "0.25.12", "@esbuild/android-x64": "0.25.12", "@esbuild/darwin-arm64": "0.25.12", "@esbuild/darwin-x64": "0.25.12", "@esbuild/freebsd-arm64": "0.25.12", "@esbuild/freebsd-x64": "0.25.12", "@esbuild/linux-arm": "0.25.12", "@esbuild/linux-arm64": "0.25.12", "@esbuild/linux-ia32": "0.25.12", "@esbuild/linux-loong64": "0.25.12", "@esbuild/linux-mips64el": "0.25.12", "@esbuild/linux-ppc64": "0.25.12", "@esbuild/linux-riscv64": "0.25.12", "@esbuild/linux-s390x": "0.25.12", "@esbuild/linux-x64": "0.25.12", "@esbuild/netbsd-arm64": "0.25.12", "@esbuild/netbsd-x64": "0.25.12", "@esbuild/openbsd-arm64": "0.25.12", "@esbuild/openbsd-x64": "0.25.12", "@esbuild/openharmony-arm64": "0.25.12", "@esbuild/sunos-x64": "0.25.12", "@esbuild/win32-arm64": "0.25.12", "@esbuild/win32-ia32": "0.25.12", "@esbuild/win32-x64": "0.25.12" }, "bin": { "esbuild": "bin/esbuild" } }, "sha512-bbPBYYrtZbkt6Os6FiTLCTFxvq4tt3JKall1vRwshA3fdVztsLAatFaZobhkBC8/BrPetoa0oksYoKXoG4ryJg=="],
 
     "estree-util-build-jsx/estree-walker": ["estree-walker@3.0.3", "", { "dependencies": { "@types/estree": "^1.0.0" } }, "sha512-7RUKfXgSMMkzt6ZuXmqapOurLGPPfgj6l9uRZ7lRGolvk0y2yocc35LdcxKC5PQZdn2DMqioAQ2NoWcrTKmm6g=="],
+
+    "example-news-app/@graphql-suite/client": ["@drizzle-graphql-suite/client@workspace:packages/client"],
+
+    "example-news-app/@graphql-suite/query": ["@drizzle-graphql-suite/query@workspace:packages/query"],
+
+    "example-news-app/@graphql-suite/schema": ["@drizzle-graphql-suite/schema@workspace:packages/schema"],
 
     "parse-entities/@types/unist": ["@types/unist@2.0.11", "", {}, "sha512-CmBKiL6NNo/OqgmMn95Fk9Whlp2mtvIv+KNpQKN2F4SjvrEesubTRWGYSg+BnWZOnlCaSTU1sMpsBOzgbYhnsA=="],
 

@@ -1,4 +1,4 @@
-import type { BuildSchemaConfig } from '@drizzle-graphql-suite/schema'
+import type { BuildSchemaConfig } from '@graphql-suite/schema'
 
 import { createEntityClient, type EntityClient } from './entity'
 import { GraphQLClientError, NetworkError } from './errors'

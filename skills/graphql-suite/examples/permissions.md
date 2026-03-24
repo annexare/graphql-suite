@@ -12,7 +12,7 @@ import {
   readOnly,
   restricted,
   withRowSecurity,
-} from 'drizzle-graphql-suite/schema'
+} from 'graphql-suite/schema'
 import { db } from './db'
 
 // ─── Build Base Schema ───────────────────────────────────────
@@ -97,7 +97,7 @@ import {
   readOnly,
   restricted,
   withRowSecurity,
-} from 'drizzle-graphql-suite/schema'
+} from 'graphql-suite/schema'
 
 // ─── Row-Level Security Rules ────────────────────────────────
 

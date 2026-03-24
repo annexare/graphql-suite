@@ -1,14 +1,14 @@
-[![Monthly Downloads](https://img.shields.io/npm/dm/drizzle-graphql-suite.svg)](https://www.npmjs.com/package/drizzle-graphql-suite)
-[![NPM](https://img.shields.io/npm/v/drizzle-graphql-suite.svg 'NPM package version')](https://www.npmjs.com/package/drizzle-graphql-suite)
-[![CI](https://github.com/annexare/drizzle-graphql-suite/actions/workflows/ci.yml/badge.svg)](https://github.com/annexare/drizzle-graphql-suite/actions/workflows/ci.yml)
+[![Monthly Downloads](https://img.shields.io/npm/dm/graphql-suite.svg)](https://www.npmjs.com/package/graphql-suite)
+[![NPM](https://img.shields.io/npm/v/graphql-suite.svg 'NPM package version')](https://www.npmjs.com/package/graphql-suite)
+[![CI](https://github.com/annexare/graphql-suite/actions/workflows/ci.yml/badge.svg)](https://github.com/annexare/graphql-suite/actions/workflows/ci.yml)
 
-# drizzle-graphql-suite
+# graphql-suite
 
 Auto-generated GraphQL CRUD, type-safe clients, and React Query hooks from Drizzle PostgreSQL schemas.
 
 ## Overview
 
-`drizzle-graphql-suite` is a three-layer toolkit that turns your Drizzle ORM schema into a fully working GraphQL API with end-to-end type safety:
+`graphql-suite` is a three-layer toolkit that turns your Drizzle ORM schema into a fully working GraphQL API with end-to-end type safety:
 
 1. **Schema builder** — generates a complete GraphQL schema with CRUD operations, relation-level filtering, per-operation hooks, and runtime permissions from Drizzle table definitions.
 2. **Client** — provides a type-safe GraphQL client that infers query/mutation types directly from your Drizzle schema, with full TypeScript support for filters, relations, and results.
@@ -20,18 +20,18 @@ Inspired by [`drizzle-graphql`](https://github.com/drizzle-team/drizzle-graphql)
 
 | Subpath | Package | Description |
 |---------|---------|-------------|
-| `drizzle-graphql-suite/schema` | [`@drizzle-graphql-suite/schema`](packages/schema/README.md) | GraphQL schema builder with CRUD, filtering, hooks, permissions, and codegen |
-| `drizzle-graphql-suite/client` | [`@drizzle-graphql-suite/client`](packages/client/README.md) | Type-safe GraphQL client with full Drizzle type inference |
-| `drizzle-graphql-suite/query` | [`@drizzle-graphql-suite/query`](packages/query/README.md) | TanStack React Query hooks for the client |
+| `graphql-suite/schema` | [`@graphql-suite/schema`](packages/schema/README.md) | GraphQL schema builder with CRUD, filtering, hooks, permissions, and codegen |
+| `graphql-suite/client` | [`@graphql-suite/client`](packages/client/README.md) | Type-safe GraphQL client with full Drizzle type inference |
+| `graphql-suite/query` | [`@graphql-suite/query`](packages/query/README.md) | TanStack React Query hooks for the client |
 
 ## Installation
 
 ```bash
-bun add drizzle-graphql-suite
+bun add graphql-suite
 ```
 
 ```bash
-npm install drizzle-graphql-suite
+npm install graphql-suite
 ```
 
 ## Peer Dependencies
@@ -49,7 +49,7 @@ Each subpath import has its own peer dependency requirements:
 ### 1. Server — Build GraphQL Schema
 
 ```ts
-import { buildSchema } from 'drizzle-graphql-suite/schema'
+import { buildSchema } from 'graphql-suite/schema'
 import { createYoga } from 'graphql-yoga'
 import { createServer } from 'node:http'
 import { db } from './db'
@@ -75,7 +75,7 @@ server.listen(4000)
 #### Per-Role Schemas (Optional)
 
 ```ts
-import { permissive, restricted, readOnly } from 'drizzle-graphql-suite/schema'
+import { permissive, restricted, readOnly } from 'graphql-suite/schema'
 
 // Cached per id — call withPermissions on each request
 const schemas = {
@@ -88,7 +88,7 @@ const schemas = {
 ### 2. Client — Type-Safe Queries
 
 ```ts
-import { createDrizzleClient } from 'drizzle-graphql-suite/client'
+import { createDrizzleClient } from 'graphql-suite/client'
 import * as schema from './db/schema'
 
 const client = createDrizzleClient({
@@ -111,7 +111,7 @@ const users = await client.entity('user').query({
 ### 3. React — Query Hooks
 
 ```tsx
-import { GraphQLProvider, useEntity, useEntityList } from 'drizzle-graphql-suite/query'
+import { GraphQLProvider, useEntity, useEntityList } from 'graphql-suite/query'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
 const queryClient = new QueryClient()
@@ -147,7 +147,7 @@ function UserList() {
 ```ts
 // app/api/graphql/route.ts
 import { createYoga } from 'graphql-yoga'
-import { buildSchema } from 'drizzle-graphql-suite/schema'
+import { buildSchema } from 'graphql-suite/schema'
 import { db } from '@/db'
 
 const { schema } = buildSchema(db)
@@ -167,7 +167,7 @@ export { handleRequest as GET, handleRequest as POST }
 // server.ts
 import { Elysia } from 'elysia'
 import { yoga } from '@elysiajs/graphql-yoga'
-import { buildSchema } from 'drizzle-graphql-suite/schema'
+import { buildSchema } from 'graphql-suite/schema'
 import { db } from './db'
 
 const { schema } = buildSchema(db)
@@ -182,8 +182,8 @@ new Elysia()
 This repo includes a [skills.sh](https://skills.sh) skill that provides AI coding agents (Claude Code, Cursor, etc.) with accurate, up-to-date guidance for all three packages.
 
 ```bash
-bunx skills add annexare/drizzle-graphql-suite
-# or: npx skills add annexare/drizzle-graphql-suite
+bunx skills add annexare/graphql-suite
+# or: npx skills add annexare/graphql-suite
 ```
 
 ## License

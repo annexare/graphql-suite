@@ -13,7 +13,7 @@ import {
   useEntityList,
   useEntityQuery,
   useEntityUpdate,
-} from 'drizzle-graphql-suite/query'
+} from 'graphql-suite/query'
 import { useState } from 'react'
 
 import { client } from './graphql-client' // Your createDrizzleClient instance

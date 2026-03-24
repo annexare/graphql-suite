@@ -4,11 +4,12 @@ import { join, resolve } from 'node:path'
 const rootDir = resolve(import.meta.dirname, '..')
 const packagesDir = join(rootDir, 'packages')
 const distDir = join(rootDir, 'dist')
-const GITHUB_PACKAGES = 'https://github.com/annexare/drizzle-graphql-suite/tree/main/packages'
-const ALIAS_REPOSITORY = {
+const GITHUB_PACKAGES = 'https://github.com/annexare/graphql-suite/tree/main/packages'
+const REPOSITORY = {
   type: 'git',
-  url: 'https://github.com/annexare/drizzle-graphql-suite.git',
+  url: 'https://github.com/annexare/graphql-suite.git',
 }
+const DOCS_URL = 'https://graphql-suite.annexare.com'
 
 // ─── Catalog resolution ──────────────────────────────────────
 
@@ -44,7 +45,7 @@ function resolveCatalogRefs(
   return resolved
 }
 
-// ─── Package preparation ─────────────────────────────────────
+// ─── Package preparation (primary @graphql-suite/*) ──────────
 
 const FIELDS_TO_COPY = [
   'name',
@@ -58,7 +59,7 @@ const FIELDS_TO_COPY = [
   'type',
 ] as const
 
-const ALIAS_PACKAGES = ['schema', 'client', 'query'] as const
+const PACKAGES = ['schema', 'client', 'query'] as const
 
 async function preparePackage(packageDir: string, catalog: Record<string, string>) {
   const srcPkg = await Bun.file(join(packageDir, 'package.json')).json()
@@ -114,6 +115,8 @@ async function preparePackage(packageDir: string, catalog: Record<string, string
   console.log(`Prepared ${srcPkg.name} for publishing`)
 }
 
+// ─── Umbrella packages ───────────────────────────────────────
+
 async function prepareUmbrellaVariant(name: string, scope: string) {
   const rootPkg = await Bun.file(join(rootDir, 'package.json')).json()
   const targetDir = join(distDir, name)
@@ -121,7 +124,7 @@ async function prepareUmbrellaVariant(name: string, scope: string) {
   await mkdir(targetDir, { recursive: true })
 
   const banner = `/** ${name} v${rootPkg.version} | ${rootPkg.license} */\n`
-  const wrapperWrites = ALIAS_PACKAGES.flatMap((pkg) => {
+  const wrapperWrites = PACKAGES.flatMap((pkg) => {
     const content = `${banner}export * from '${scope}/${pkg}'\n`
     return [
       Bun.write(join(targetDir, `${pkg}.js`), content),
@@ -134,16 +137,16 @@ async function prepareUmbrellaVariant(name: string, scope: string) {
   // biome-ignore lint/suspicious/noExplicitAny: building dynamic object
   const peerDependencies: Record<string, any> = {}
 
-  for (const pkg of ALIAS_PACKAGES) {
+  for (const pkg of PACKAGES) {
     dependencies[`${scope}/${pkg}`] = rootPkg.version
   }
 
-  // Collect peer dependencies from the underlying packages to match their declared ranges
-  for (const pkg of ALIAS_PACKAGES) {
+  // Collect peer dependencies from the underlying packages
+  for (const pkg of PACKAGES) {
     const srcPkg = await Bun.file(join(packagesDir, pkg, 'package.json')).json()
     if (srcPkg.peerDependencies) {
       for (const [dep, range] of Object.entries(srcPkg.peerDependencies) as [string, string][]) {
-        if (!dep.startsWith('@drizzle-graphql-suite/') && !peerDependencies[dep]) {
+        if (!dep.startsWith('@graphql-suite/') && !peerDependencies[dep]) {
           peerDependencies[dep] = range
         }
       }
@@ -157,7 +160,7 @@ async function prepareUmbrellaVariant(name: string, scope: string) {
     description: rootPkg.description,
     license: rootPkg.license,
     author: rootPkg.author,
-    repository: ALIAS_REPOSITORY,
+    repository: REPOSITORY,
     keywords: rootPkg.keywords,
     type: 'module',
     publishConfig: { access: 'public' },
@@ -177,15 +180,28 @@ async function prepareUmbrellaVariant(name: string, scope: string) {
   await Promise.all([
     ...wrapperWrites,
     Bun.write(join(targetDir, 'package.json'), `${JSON.stringify(pkg, null, 2)}\n`),
-    copyLicenseAndReadme(targetDir, scope === '@graphql-suite'),
+    copyLicenseAndReadme(targetDir),
   ])
 
   console.log(`Prepared ${name} umbrella package`)
 }
 
-// ─── Alias packages (@graphql-suite/*) ──────────────────────
+// ─── Deprecated alias packages (@drizzle-graphql-suite/*) ────
 
-async function copyLicenseAndReadme(targetDir: string, rewriteScope = false) {
+const DEPRECATION_README = (newName: string) => `# Deprecated
+
+This package has been renamed to \`${newName}\`.
+
+Please update your dependencies:
+
+\`\`\`bash
+bun add ${newName}
+\`\`\`
+
+Documentation: ${DOCS_URL}
+`
+
+async function copyLicenseAndReadme(targetDir: string) {
   const licenseFile = Bun.file(join(rootDir, 'LICENSE'))
   const readmeFile = Bun.file(join(rootDir, 'README.md'))
   const writes: Promise<number>[] = []
@@ -194,20 +210,7 @@ async function copyLicenseAndReadme(targetDir: string, rewriteScope = false) {
     writes.push(Bun.write(join(targetDir, 'LICENSE'), licenseFile))
   }
   if (await readmeFile.exists()) {
-    if (rewriteScope) {
-      let readme = await readmeFile.text()
-      // Rewrite all package references to the short scope
-      readme = readme.replaceAll('@drizzle-graphql-suite/', '@graphql-suite/')
-      readme = readme.replaceAll('drizzle-graphql-suite', 'graphql-suite')
-      // Restore GitHub repo URLs (the repo name hasn't changed)
-      readme = readme.replaceAll(
-        'github.com/annexare/graphql-suite',
-        'github.com/annexare/drizzle-graphql-suite',
-      )
-      writes.push(Bun.write(join(targetDir, 'README.md'), readme))
-    } else {
-      writes.push(Bun.write(join(targetDir, 'README.md'), readmeFile))
-    }
+    writes.push(Bun.write(join(targetDir, 'README.md'), readmeFile))
   }
 
   await Promise.all(writes)
@@ -219,26 +222,28 @@ function rewriteScope(
   if (!deps) return undefined
   const rewritten: Record<string, string> = {}
   for (const [dep, range] of Object.entries(deps)) {
-    rewritten[dep.replace('@drizzle-graphql-suite/', '@graphql-suite/')] = range
+    rewritten[dep.replace('@graphql-suite/', '@drizzle-graphql-suite/')] = range
   }
   return rewritten
 }
 
-async function prepareScopedAlias(name: string, catalog: Record<string, string>) {
+async function prepareDeprecatedAlias(name: string, catalog: Record<string, string>) {
   const srcPkg = await Bun.file(join(packagesDir, name, 'package.json')).json()
   const srcDistDir = join(packagesDir, name, 'dist')
-  const aliasDir = join(distDir, '@graphql-suite', name)
+  const aliasDir = join(distDir, '@drizzle-graphql-suite', name)
 
   await mkdir(aliasDir, { recursive: true })
 
+  const aliasName = `@drizzle-graphql-suite/${name}`
+
   // biome-ignore lint/suspicious/noExplicitAny: building dynamic object
   const pkg: Record<string, any> = {
-    name: `@graphql-suite/${name}`,
+    name: aliasName,
     version: srcPkg.version,
     description: srcPkg.description,
     license: srcPkg.license,
     author: srcPkg.author,
-    repository: ALIAS_REPOSITORY,
+    repository: REPOSITORY,
     type: 'module',
     publishConfig: { access: 'public' },
     main: './index.js',
@@ -261,10 +266,11 @@ async function prepareScopedAlias(name: string, catalog: Record<string, string>)
     pkg.peerDependencies = resolvedPeers
   }
 
-  // Copy built artifacts, rewriting the banner to use the alias package name
-  const aliasBanner = `/** @graphql-suite/${name} v${pkg.version} | ${pkg.license} */`
+  // Copy built artifacts, rewriting banner and keeping @graphql-suite/* imports as-is
+  const aliasBanner = `/** ${aliasName} v${pkg.version} | ${pkg.license} */`
   const writes: Promise<number>[] = [
     Bun.write(join(aliasDir, 'package.json'), `${JSON.stringify(pkg, null, 2)}\n`),
+    Bun.write(join(aliasDir, 'README.md'), DEPRECATION_README(`@graphql-suite/${name}`)),
   ]
 
   const requiredFiles = ['index.js', 'index.d.ts']
@@ -278,14 +284,17 @@ async function prepareScopedAlias(name: string, catalog: Record<string, string>)
     let content = await src.text()
     // Replace the original banner with the alias banner
     content = content.replace(/^\/\*\*.*?\*\/\n?/, `${aliasBanner}\n`)
-    // Rewrite @drizzle-graphql-suite/* imports to @graphql-suite/* in built files
-    content = content.replaceAll('@drizzle-graphql-suite/', '@graphql-suite/')
     writes.push(Bun.write(join(aliasDir, file), content))
   }
 
-  await Promise.all([...writes, copyLicenseAndReadme(aliasDir, true)])
+  const licenseFile = Bun.file(join(rootDir, 'LICENSE'))
+  if (await licenseFile.exists()) {
+    writes.push(Bun.write(join(aliasDir, 'LICENSE'), licenseFile))
+  }
 
-  console.log(`Prepared @graphql-suite/${name}`)
+  await Promise.all(writes)
+
+  console.log(`Prepared ${aliasName} (deprecated alias)`)
 }
 
 async function main() {
@@ -294,10 +303,13 @@ async function main() {
   const packageDirs = entries.filter((e) => e.isDirectory()).map((e) => join(packagesDir, e.name))
 
   await Promise.all([
+    // Primary packages (@graphql-suite/*)
     ...packageDirs.map((dir) => preparePackage(dir, catalog)),
-    ...ALIAS_PACKAGES.map((name) => prepareScopedAlias(name, catalog)),
-    prepareUmbrellaVariant('drizzle-graphql-suite', '@drizzle-graphql-suite'),
+    // Deprecated aliases (@drizzle-graphql-suite/*)
+    ...PACKAGES.map((name) => prepareDeprecatedAlias(name, catalog)),
+    // Umbrella packages
     prepareUmbrellaVariant('graphql-suite', '@graphql-suite'),
+    prepareUmbrellaVariant('drizzle-graphql-suite', '@drizzle-graphql-suite'),
   ])
   console.log('All packages prepared for publishing')
 }

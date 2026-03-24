@@ -33,10 +33,10 @@ async function updatePackageJson(filePath: string, version: string) {
   const pkg = await file.json()
   pkg.version = version
 
-  // Keep @drizzle-graphql-suite/* dependencies in sync across all packages
+  // Keep @graphql-suite/* dependencies in sync across all packages
   if (pkg.dependencies) {
     for (const dep of Object.keys(pkg.dependencies)) {
-      if (dep.startsWith('@drizzle-graphql-suite/')) {
+      if (dep.startsWith('@graphql-suite/')) {
         pkg.dependencies[dep] = version
       }
     }

@@ -14,9 +14,9 @@
     "db:seed": "bun run src/scripts/seed.ts"
   },
   "dependencies": {
-    "@graphql-suite/client": "workspace:@drizzle-graphql-suite/client@*",
-    "@graphql-suite/query": "workspace:@drizzle-graphql-suite/query@*",
-    "@graphql-suite/schema": "workspace:@drizzle-graphql-suite/schema@*",
+    "@graphql-suite/client": "workspace:@graphql-suite/client@*",
+    "@graphql-suite/query": "workspace:@graphql-suite/query@*",
+    "@graphql-suite/schema": "workspace:@graphql-suite/schema@*",
     "drizzle-orm": "catalog:",
     "graphql": "catalog:",
     "graphql-yoga": "5.18.1"

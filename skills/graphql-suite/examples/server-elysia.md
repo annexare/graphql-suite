@@ -4,7 +4,7 @@ ElysiaJS integration with `@elysiajs/graphql-yoga` plugin.
 
 ```ts
 import { yoga } from '@elysiajs/graphql-yoga'
-import { buildSchema } from 'drizzle-graphql-suite/schema'
+import { buildSchema } from 'graphql-suite/schema'
 import { Elysia } from 'elysia'
 
 import { db } from './db'

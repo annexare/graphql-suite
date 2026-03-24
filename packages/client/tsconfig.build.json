@@ -7,7 +7,7 @@
     "outDir": "dist",
     "rootDir": "src",
     "paths": {
-      "@drizzle-graphql-suite/schema": ["../schema/dist/index.d.ts"]
+      "@graphql-suite/schema": ["../schema/dist/index.d.ts"]
     }
   },
   "include": ["src"],

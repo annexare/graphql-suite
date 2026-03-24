@@ -1,6 +1,6 @@
 # Schema API Reference
 
-`@drizzle-graphql-suite/schema` — Server-side GraphQL schema builder from Drizzle PostgreSQL table definitions.
+`@graphql-suite/schema` — Server-side GraphQL schema builder from Drizzle PostgreSQL table definitions.
 
 ## Functions
 
@@ -9,7 +9,7 @@
 Build a complete GraphQL schema with queries and mutations from a Drizzle database instance.
 
 ```ts
-import { buildSchema } from 'drizzle-graphql-suite/schema'
+import { buildSchema } from 'graphql-suite/schema'
 
 const { schema, entities, withPermissions, clearPermissionCache } = buildSchema(db, {
   tables: { exclude: ['session'] },
@@ -30,7 +30,7 @@ const { schema, entities, withPermissions, clearPermissionCache } = buildSchema(
 Build only the entities (queries, mutations, input types, output types) without wrapping in a full `GraphQLSchema`. Useful when composing with other schema tools.
 
 ```ts
-import { buildEntities } from 'drizzle-graphql-suite/schema'
+import { buildEntities } from 'graphql-suite/schema'
 
 const entities = buildEntities(db)
 // entities.queries, entities.mutations, entities.inputs, entities.types
@@ -44,7 +44,7 @@ const entities = buildEntities(db)
 Build a schema directly from Drizzle schema exports without a database connection. Creates a mock db with stub resolvers — intended for schema introspection and code generation only, not query execution.
 
 ```ts
-import { buildSchemaFromDrizzle } from 'drizzle-graphql-suite/schema'
+import { buildSchemaFromDrizzle } from 'graphql-suite/schema'
 import * as schema from './db/schema'
 
 const { schema: gqlSchema, withPermissions, clearPermissionCache } = buildSchemaFromDrizzle(schema)
@@ -162,7 +162,7 @@ type RelationPruneRule =
 Create a permissive permission config — all tables allowed by default; overrides deny.
 
 ```ts
-import { permissive, readOnly } from 'drizzle-graphql-suite/schema'
+import { permissive, readOnly } from 'graphql-suite/schema'
 
 const config = permissive('maintainer', {
   audit: false,          // exclude entirely
@@ -181,7 +181,7 @@ const config = permissive('maintainer', {
 Create a restricted permission config — nothing allowed by default; overrides grant.
 
 ```ts
-import { restricted } from 'drizzle-graphql-suite/schema'
+import { restricted } from 'graphql-suite/schema'
 
 const config = restricted('user', {
   posts: { query: true },
@@ -200,7 +200,7 @@ const config = restricted('user', {
 Create a `TableAccess` shorthand that allows queries only.
 
 ```ts
-import { readOnly } from 'drizzle-graphql-suite/schema'
+import { readOnly } from 'graphql-suite/schema'
 
 readOnly() // => { query: true, insert: false, update: false, delete: false }
 ```
@@ -233,7 +233,7 @@ clearPermissionCache('user-123')
 Generate a `HooksConfig` that injects WHERE clauses from row-level security rules. Rules are applied as `before` hooks on `query`, `querySingle`, `count`, `update`, and `delete` operations.
 
 ```ts
-import { withRowSecurity } from 'drizzle-graphql-suite/schema'
+import { withRowSecurity } from 'graphql-suite/schema'
 
 const hooks = withRowSecurity({
   posts: (context) => ({ authorId: { eq: context.user.id } }),
@@ -250,7 +250,7 @@ const hooks = withRowSecurity({
 Deep-merge multiple `HooksConfig` objects with proper hook chaining.
 
 ```ts
-import { mergeHooks, withRowSecurity } from 'drizzle-graphql-suite/schema'
+import { mergeHooks, withRowSecurity } from 'graphql-suite/schema'
 
 const hooks = mergeHooks(withRowSecurity(rules), authHooks, auditHooks)
 ```
@@ -272,7 +272,7 @@ const hooks = mergeHooks(withRowSecurity(rules), authHooks, auditHooks)
 Custom scalar for `json` and `jsonb` columns. Handles serialization/parsing for both input and output.
 
 ```ts
-import { GraphQLJSON } from 'drizzle-graphql-suite/schema'
+import { GraphQLJSON } from 'graphql-suite/schema'
 ```
 
 ## `SchemaBuilder` Class
@@ -280,7 +280,7 @@ import { GraphQLJSON } from 'drizzle-graphql-suite/schema'
 The `SchemaBuilder` class is exported for advanced use cases. Usually you'll use `buildSchema()` instead.
 
 ```ts
-import { SchemaBuilder } from 'drizzle-graphql-suite/schema'
+import { SchemaBuilder } from 'graphql-suite/schema'
 
 const builder = new SchemaBuilder(db, config)
 const { schema, entities, withPermissions, clearPermissionCache } = builder.build()
@@ -337,7 +337,7 @@ Every column filter supports:
 
 ## Error Handling
 
-Schema builder errors are prefixed with `"Drizzle-GraphQL Error: "`.
+Schema builder errors are prefixed with `"GraphQL-Suite Error: "`.
 
 In resolvers, errors are caught and re-thrown as `GraphQLError`:
 
