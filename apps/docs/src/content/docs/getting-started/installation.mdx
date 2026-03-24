@@ -3,35 +3,90 @@ title: Installation
 description: How to install graphql-suite packages for your server, client, and React app
 ---
 
+import { Tabs, TabItem } from '@astrojs/starlight/components'
+
 Install the packages you need depending on your use case. All three are published independently and can be used separately.
 
 ## Server (schema builder)
 
-```bash
-bun add @graphql-suite/schema graphql drizzle-orm
-```
+<Tabs syncKey="pkg">
+  <TabItem label="bun">
+    ```bash
+    bun add @graphql-suite/schema graphql drizzle-orm
+    ```
+  </TabItem>
+  <TabItem label="npm">
+    ```bash
+    npm install @graphql-suite/schema graphql drizzle-orm
+    ```
+  </TabItem>
+  <TabItem label="pnpm">
+    ```bash
+    pnpm add @graphql-suite/schema graphql drizzle-orm
+    ```
+  </TabItem>
+  <TabItem label="yarn">
+    ```bash
+    yarn add @graphql-suite/schema graphql drizzle-orm
+    ```
+  </TabItem>
+</Tabs>
 
 This is the core package. It takes your Drizzle table definitions and produces a full GraphQL schema at runtime.
 
 ## Client (type-safe GraphQL client)
 
-```bash
-bun add @graphql-suite/client drizzle-orm
-```
+<Tabs syncKey="pkg">
+  <TabItem label="bun">
+    ```bash
+    bun add @graphql-suite/client drizzle-orm
+    ```
+  </TabItem>
+  <TabItem label="npm">
+    ```bash
+    npm install @graphql-suite/client drizzle-orm
+    ```
+  </TabItem>
+  <TabItem label="pnpm">
+    ```bash
+    pnpm add @graphql-suite/client drizzle-orm
+    ```
+  </TabItem>
+  <TabItem label="yarn">
+    ```bash
+    yarn add @graphql-suite/client drizzle-orm
+    ```
+  </TabItem>
+</Tabs>
 
 A standalone client that builds type-safe GraphQL queries from your Drizzle schema. Works in any JavaScript environment (Node, Bun, browsers, React Native).
 
 ## React hooks (optional)
 
-```bash
-bun add @graphql-suite/query @tanstack/react-query react
-```
+<Tabs syncKey="pkg">
+  <TabItem label="bun">
+    ```bash
+    bun add @graphql-suite/query @tanstack/react-query react
+    ```
+  </TabItem>
+  <TabItem label="npm">
+    ```bash
+    npm install @graphql-suite/query @tanstack/react-query react
+    ```
+  </TabItem>
+  <TabItem label="pnpm">
+    ```bash
+    pnpm add @graphql-suite/query @tanstack/react-query react
+    ```
+  </TabItem>
+  <TabItem label="yarn">
+    ```bash
+    yarn add @graphql-suite/query @tanstack/react-query react
+    ```
+  </TabItem>
+</Tabs>
 
 Wraps the client in React hooks powered by TanStack Query. Use this if you are building a React frontend.
-
-:::note
-All packages also work with **npm**, **pnpm**, and **yarn**. Replace `bun add` with your preferred package manager's install command.
-:::
 
 ## Peer dependencies
 
