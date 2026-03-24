@@ -180,10 +180,14 @@ async function prepareUmbrellaVariant(name: string, scope: string, deprecatedBy?
   await Promise.all([
     ...wrapperWrites,
     Bun.write(join(targetDir, 'package.json'), `${JSON.stringify(pkg, null, 2)}\n`),
-    deprecatedBy ? copyLicenseAndDeprecationReadme(targetDir, deprecatedBy) : copyLicenseAndReadme(targetDir),
+    deprecatedBy
+      ? copyLicenseAndDeprecationReadme(targetDir, deprecatedBy)
+      : copyLicenseAndReadme(targetDir),
   ])
 
-  console.log(`Prepared ${name} umbrella package${deprecatedBy ? ` (deprecated → ${deprecatedBy})` : ''}`)
+  console.log(
+    `Prepared ${name} umbrella package${deprecatedBy ? ` (deprecated → ${deprecatedBy})` : ''}`,
+  )
 }
 
 // ─── Deprecated alias packages (@drizzle-graphql-suite/*) ────
