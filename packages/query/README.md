@@ -3,7 +3,7 @@
 > Part of [`graphql-suite`](https://github.com/annexare/graphql-suite).
 > See also: [`schema`](../schema/README.md) | [`client`](../client/README.md)
 
-TanStack React Query hooks for `graphql-suite/client` — type-safe data fetching with caching, pagination, and mutations.
+TanStack React Query hooks for `@graphql-suite/client` — type-safe data fetching with caching, pagination, and mutations.
 
 ## Installation
 

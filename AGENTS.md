@@ -77,8 +77,8 @@ import { relations } from 'drizzle-orm'
 import { pgTable, text, uuid } from 'drizzle-orm/pg-core'
 import type { GraphQLSchema } from 'graphql'
 
-// 2. Aliases (path aliases like graphql-suite/client)
-import type { AnyEntityDefs } from 'graphql-suite/client'
+// 2. Aliases (path aliases like @graphql-suite/client)
+import type { AnyEntityDefs } from '@graphql-suite/client'
 
 // 3. Relative paths
 import { SchemaBuilder } from './schema-builder'

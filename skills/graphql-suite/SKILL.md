@@ -427,10 +427,11 @@ where: {
 
 ### Server (Schema Package)
 
-Errors thrown in hooks or resolvers are caught and re-thrown as `GraphQLError`:
+Builder/config validation errors are prefixed with `"GraphQL-Suite Error: ..."`.
+Errors thrown in hooks or resolvers are caught and re-thrown as `GraphQLError` with the original message (no prefix added):
 ```ts
-// Errors are prefixed: "GraphQL-Suite Error: ..."
-// In custom hooks, throw standard Error — it will be wrapped in GraphQLError
+// Config errors: "GraphQL-Suite Error: List and single query suffixes cannot be the same."
+// Resolver/hook errors: re-thrown as GraphQLError(e.message) — original message preserved
 ```
 
 ### Client
