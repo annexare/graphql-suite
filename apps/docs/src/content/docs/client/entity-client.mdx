@@ -138,12 +138,12 @@ where: {
 }
 ```
 
-**One-to-one / many-to-one** relations use `some` as the quantifier, applied implicitly — just pass the filter object directly:
+**One-to-one / many-to-one** relations use a direct nested filter object without any quantifier:
 
 ```ts
 where: {
   author: {
-    some: { role: { eq: 'admin' } },
+    role: { eq: 'admin' },
   },
 }
 ```

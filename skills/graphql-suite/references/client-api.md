@@ -234,11 +234,11 @@ where: {
 }
 ```
 
-One-to-one / many-to-one relations use `some`:
+One-to-one / many-to-one relations use a direct nested filter (no quantifier):
 
 ```ts
 where: {
-  author: { some: { role: { eq: 'admin' } } },
+  author: { role: { eq: 'admin' } },
 }
 ```
 

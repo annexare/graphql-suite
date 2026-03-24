@@ -117,7 +117,7 @@ async function preparePackage(packageDir: string, catalog: Record<string, string
 
 // ─── Umbrella packages ───────────────────────────────────────
 
-async function prepareUmbrellaVariant(name: string, scope: string) {
+async function prepareUmbrellaVariant(name: string, scope: string, deprecatedBy?: string) {
   const rootPkg = await Bun.file(join(rootDir, 'package.json')).json()
   const targetDir = join(distDir, name)
 
@@ -180,10 +180,10 @@ async function prepareUmbrellaVariant(name: string, scope: string) {
   await Promise.all([
     ...wrapperWrites,
     Bun.write(join(targetDir, 'package.json'), `${JSON.stringify(pkg, null, 2)}\n`),
-    copyLicenseAndReadme(targetDir),
+    deprecatedBy ? copyLicenseAndDeprecationReadme(targetDir, deprecatedBy) : copyLicenseAndReadme(targetDir),
   ])
 
-  console.log(`Prepared ${name} umbrella package`)
+  console.log(`Prepared ${name} umbrella package${deprecatedBy ? ` (deprecated → ${deprecatedBy})` : ''}`)
 }
 
 // ─── Deprecated alias packages (@drizzle-graphql-suite/*) ────
@@ -211,6 +211,19 @@ async function copyLicenseAndReadme(targetDir: string) {
   }
   if (await readmeFile.exists()) {
     writes.push(Bun.write(join(targetDir, 'README.md'), readmeFile))
+  }
+
+  await Promise.all(writes)
+}
+
+async function copyLicenseAndDeprecationReadme(targetDir: string, newName: string) {
+  const writes: Promise<number>[] = [
+    Bun.write(join(targetDir, 'README.md'), DEPRECATION_README(newName)),
+  ]
+
+  const licenseFile = Bun.file(join(rootDir, 'LICENSE'))
+  if (await licenseFile.exists()) {
+    writes.push(Bun.write(join(targetDir, 'LICENSE'), licenseFile))
   }
 
   await Promise.all(writes)
@@ -279,7 +292,7 @@ async function main() {
     ...PACKAGES.map((name) => prepareDeprecatedAlias(name)),
     // Umbrella packages
     prepareUmbrellaVariant('graphql-suite', '@graphql-suite'),
-    prepareUmbrellaVariant('drizzle-graphql-suite', '@drizzle-graphql-suite'),
+    prepareUmbrellaVariant('drizzle-graphql-suite', '@drizzle-graphql-suite', 'graphql-suite'),
   ])
   console.log('All packages prepared for publishing')
 }
