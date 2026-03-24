@@ -15,11 +15,11 @@ hero:
 
 ## Three packages, one workflow
 
-**graphql-suite** turns your Drizzle ORM table definitions into a production-ready GraphQL stack with zero code generation and full TypeScript inference. Inspired by [`drizzle-graphql`](https://github.com/drizzle-team/drizzle-graphql), it builds on the same idea with deeper PostgreSQL support, relation-aware filters, configurable hooks, permissions, and a full client + React Query layer.
+**graphql-suite** turns your Drizzle ORM table definitions into a production-ready GraphQL stack with zero code generation and full TypeScript inference.
 
 ### @graphql-suite/schema
 
-Generates a complete GraphQL schema with CRUD operations directly from your Drizzle PostgreSQL tables. Queries, mutations, filters, ordering, pagination, relations, and JSONB fields are all handled automatically at runtime — no codegen step required.
+Inspired by [`drizzle-graphql`](https://github.com/drizzle-team/drizzle-graphql), this package is a purpose-built replacement focused on PostgreSQL. It generates a complete GraphQL schema with CRUD operations directly from your Drizzle tables — queries, mutations, filters, ordering, pagination, relations, and JSONB fields are all handled automatically at runtime with no codegen step. On top of that, it adds configurable hooks, permission layers, row-level security, and relation-aware filters. The type-safe client and React Query hooks are provided by the companion packages below.
 
 ### @graphql-suite/client
 
