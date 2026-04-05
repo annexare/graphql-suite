@@ -19,7 +19,7 @@
     "@graphql-suite/schema": "workspace:@graphql-suite/schema@*",
     "drizzle-orm": "catalog:",
     "graphql": "catalog:",
-    "graphql-yoga": "5.18.1"
+    "graphql-yoga": "5.21.0"
   },
   "devDependencies": {
     "@tanstack/react-query": "catalog:",
