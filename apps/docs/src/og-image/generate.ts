@@ -24,13 +24,20 @@ async function loadFont(weight: number): Promise<ArrayBuffer> {
       // Use IE11 User-Agent to get TTF format — Satori cannot parse woff2
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Trident/7.0; rv:11.0) like Gecko',
     },
+    signal: AbortSignal.timeout(10_000),
   })
+  if (!cssResponse.ok) {
+    throw new Error(`Failed to fetch font CSS (weight ${weight}): ${cssResponse.status}`)
+  }
   const css = await cssResponse.text()
-  const fontUrl = css.match(/src:\s*url\(([^)]+)\)/)?.[1]
+  const fontUrl = css.match(/src:\s*url\(([^)]+)\)/)?.[1]?.replace(/^['"]|['"]$/g, '')
   if (!fontUrl) {
     throw new Error(`Failed to parse font URL for weight ${weight}`)
   }
-  const fontResponse = await fetch(fontUrl)
+  const fontResponse = await fetch(fontUrl, { signal: AbortSignal.timeout(10_000) })
+  if (!fontResponse.ok) {
+    throw new Error(`Failed to fetch font file (weight ${weight}): ${fontResponse.status}`)
+  }
   return fontResponse.arrayBuffer()
 }
 
@@ -38,7 +45,10 @@ let fontsPromise: Promise<ArrayBuffer[]> | undefined
 
 function loadFonts(): Promise<ArrayBuffer[]> {
   if (!fontsPromise) {
-    fontsPromise = Promise.all([loadFont(400), loadFont(700)])
+    fontsPromise = Promise.all([loadFont(400), loadFont(700)]).catch((error) => {
+      fontsPromise = undefined
+      throw error
+    })
   }
   return fontsPromise
 }
