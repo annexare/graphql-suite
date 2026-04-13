@@ -1,7 +1,8 @@
 import { readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-const dir = resolve(process.cwd(), 'public/icons')
+const dir = resolve(dirname(fileURLToPath(import.meta.url)), '../../../public/icons')
 const read = (name: string) => readFileSync(resolve(dir, name), 'utf-8')
 
 export const graphqlIcon = read('graphql.svg')
