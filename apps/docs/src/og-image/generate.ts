@@ -15,6 +15,12 @@ export interface OgImageConfig {
   domain?: string
 }
 
+export interface AppIconConfig {
+  size: number
+  icons: string[]
+  accentColor?: string
+}
+
 // ─── Font Loading ────────────────────────────────────────────
 
 async function loadFont(weight: number): Promise<ArrayBuffer> {
@@ -45,7 +51,7 @@ let fontsPromise: Promise<ArrayBuffer[]> | undefined
 
 function loadFonts(): Promise<ArrayBuffer[]> {
   if (!fontsPromise) {
-    fontsPromise = Promise.all([loadFont(400), loadFont(700)]).catch((error) => {
+    fontsPromise = Promise.all([loadFont(300), loadFont(400), loadFont(700)]).catch((error) => {
       fontsPromise = undefined
       throw error
     })
@@ -76,7 +82,7 @@ type SatoriNode = Record<string, any>
 // ─── Generator ───────────────────────────────────────────────
 
 export async function generateOgImage(config: OgImageConfig): Promise<Buffer> {
-  const [fontRegular, fontBold] = await loadFonts()
+  const [, fontRegular, fontBold] = await loadFonts()
 
   const accentColor = config.accentColor ?? '#e535ab'
 
@@ -194,6 +200,127 @@ export async function generateOgImage(config: OgImageConfig): Promise<Buffer> {
     height: HEIGHT,
     fonts: [
       { name: 'Inter', data: fontRegular, weight: 400, style: 'normal' as const },
+      { name: 'Inter', data: fontBold, weight: 700, style: 'normal' as const },
+    ],
+  })
+
+  return await sharp(Buffer.from(svg)).png({ compressionLevel: 9 }).toBuffer()
+}
+
+// ─── App Icon Generator ──────────────────────────────────────
+
+export async function generateAppIcon(config: AppIconConfig): Promise<Buffer> {
+  const [fontLight, , fontBold] = await loadFonts()
+
+  const accentColor = config.accentColor ?? '#e535ab'
+  const { size, icons } = config
+
+  // Scale proportions relative to size
+  const accentHeight = Math.max(1, Math.round(size * 0.008))
+  const iconSize = Math.round(size * 0.17)
+  const iconGap = Math.round(size * 0.06)
+  const braceFontSize = Math.round(size * 0.675)
+  const braceGap = Math.round(size * 0.04)
+  const iconRadius = Math.max(1, Math.round(iconSize / 12))
+
+  const element: SatoriNode = {
+    type: 'div',
+    props: {
+      style: {
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: '100%',
+        height: '100%',
+        background: '#f8fafc',
+        fontFamily: 'Inter',
+        position: 'relative',
+      },
+      children: [
+        // Accent bar at top
+        {
+          type: 'div',
+          props: {
+            style: {
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              height: accentHeight,
+              background: accentColor,
+            },
+          },
+        },
+        // Content row: { icons }
+        {
+          type: 'div',
+          props: {
+            style: {
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            },
+            children: [
+              // Left brace
+              {
+                type: 'div',
+                props: {
+                  style: {
+                    fontSize: braceFontSize,
+                    fontWeight: 300,
+                    color: '#cbd5e1',
+                    lineHeight: 1,
+                    marginRight: braceGap,
+                  },
+                  children: '{',
+                },
+              },
+              // Stacked icons
+              {
+                type: 'div',
+                props: {
+                  style: {
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: iconGap,
+                  },
+                  children: icons.map((svg) => ({
+                    type: 'img',
+                    props: {
+                      src: svgToDataUri(roundSvg(svg, iconRadius)),
+                      width: iconSize,
+                      height: iconSize,
+                    },
+                  })),
+                },
+              },
+              // Right brace
+              {
+                type: 'div',
+                props: {
+                  style: {
+                    fontSize: braceFontSize,
+                    fontWeight: 300,
+                    color: '#cbd5e1',
+                    lineHeight: 1,
+                    marginLeft: braceGap,
+                  },
+                  children: '}',
+                },
+              },
+            ],
+          },
+        },
+      ],
+    },
+  }
+
+  const svg = await satori(element, {
+    width: size,
+    height: size,
+    fonts: [
+      { name: 'Inter', data: fontLight, weight: 300, style: 'normal' as const },
       { name: 'Inter', data: fontBold, weight: 700, style: 'normal' as const },
     ],
   })
