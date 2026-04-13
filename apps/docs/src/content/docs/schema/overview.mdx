@@ -4,6 +4,15 @@ description: How @graphql-suite/schema generates a complete GraphQL schema from 
 sidebar:
   order: 0
   label: Overview
+head:
+  - tag: meta
+    attrs:
+      property: og:image
+      content: https://graphql-suite.annexare.com/og/schema.png
+  - tag: meta
+    attrs:
+      name: twitter:image
+      content: https://graphql-suite.annexare.com/og/schema.png
 ---
 
 `@graphql-suite/schema` takes a Drizzle `PgDatabase` instance and produces a complete GraphQL schema at runtime. There is no code generation step — your Drizzle table definitions are the single source of truth.
