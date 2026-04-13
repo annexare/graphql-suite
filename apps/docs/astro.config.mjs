@@ -40,7 +40,7 @@ export default defineConfig({
           // scripts into Starlight's HTML output (known Astro limitation)
           tag: 'script',
           attrs: {},
-          content: `if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js')`,
+          content: `if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {})`,
         },
         {
           tag: 'link',
