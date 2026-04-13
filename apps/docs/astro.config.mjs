@@ -132,7 +132,7 @@ export default defineConfig({
     }),
     AstroPWA({
       registerType: 'autoUpdate',
-      injectRegister: 'script',
+      injectRegister: false,
       manifest: {
         name: 'GraphQL Suite',
         short_name: 'GQL Suite',
