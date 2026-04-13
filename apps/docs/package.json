@@ -10,7 +10,7 @@
     "deploy": "astro build && wrangler pages deploy dist --project-name=graphql-suite --branch=main"
   },
   "dependencies": {
-    "@astrojs/starlight": "0.38.2",
+    "@astrojs/starlight": "0.38.3",
     "astro": "6.0.8",
     "satori": "0.26.0",
     "sharp": "0.34.5"
