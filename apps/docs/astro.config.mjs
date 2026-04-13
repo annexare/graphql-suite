@@ -43,7 +43,33 @@ export default defineConfig({
         },
         {
           tag: 'meta',
-          attrs: { name: 'twitter:card', content: 'summary' },
+          attrs: {
+            property: 'og:image',
+            content: 'https://graphql-suite.annexare.com/og/index.png',
+          },
+        },
+        {
+          tag: 'meta',
+          attrs: { property: 'og:image:width', content: '1200' },
+        },
+        {
+          tag: 'meta',
+          attrs: { property: 'og:image:height', content: '630' },
+        },
+        {
+          tag: 'meta',
+          attrs: { property: 'og:image:type', content: 'image/png' },
+        },
+        {
+          tag: 'meta',
+          attrs: {
+            name: 'twitter:image',
+            content: 'https://graphql-suite.annexare.com/og/index.png',
+          },
+        },
+        {
+          tag: 'meta',
+          attrs: { name: 'twitter:card', content: 'summary_large_image' },
         },
       ],
       social: [
