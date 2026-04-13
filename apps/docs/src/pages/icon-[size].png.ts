@@ -11,6 +11,9 @@ export const getStaticPaths: GetStaticPaths = () => {
 
 export const GET: APIRoute = async ({ params }) => {
   const size = Number(params.size)
+  if (!SIZES.includes(size)) {
+    return new Response('Not found', { status: 404 })
+  }
 
   const png = await generateAppIcon({
     size,

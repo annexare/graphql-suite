@@ -36,6 +36,8 @@ export default defineConfig({
           attrs: { rel: 'manifest', href: '/manifest.webmanifest' },
         },
         {
+          // Manual SW registration required — @vite-pwa/astro cannot inject
+          // scripts into Starlight's HTML output (known Astro limitation)
           tag: 'script',
           attrs: {},
           content: `if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js')`,
@@ -130,6 +132,7 @@ export default defineConfig({
     }),
     AstroPWA({
       registerType: 'autoUpdate',
+      injectRegister: 'script',
       manifest: {
         name: 'GraphQL Suite',
         short_name: 'GQL Suite',
@@ -157,7 +160,7 @@ export default defineConfig({
         ],
       },
       workbox: {
-        navigateFallback: '/404',
+        navigateFallback: '/404.html',
         runtimeCaching: [
           {
             urlPattern: /\.(?:html|css|js|svg|png|jpg|woff2?)$/i,
