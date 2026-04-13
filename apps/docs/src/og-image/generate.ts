@@ -45,6 +45,17 @@ function loadFonts(): Promise<ArrayBuffer[]> {
 
 // ─── Helpers ─────────────────────────────────────────────────
 
+function roundSvg(svg: string, radius: number): string {
+  // Extract viewBox dimensions to create a matching clipPath
+  const vb = svg.match(/viewBox="0 0 (\d+\.?\d*) (\d+\.?\d*)"/)
+  if (!vb) return svg
+  const [w, h] = [vb[1], vb[2]]
+  const clipPath = `<defs><clipPath id="r"><rect width="${w}" height="${h}" rx="${radius}"/></clipPath></defs>`
+  return svg
+    .replace(/<svg([^>]*)>/, `<svg$1>${clipPath}<g clip-path="url(#r)">`)
+    .replace(/<\/svg>/, '</g></svg>')
+}
+
 function svgToDataUri(svg: string): string {
   return `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`
 }
@@ -123,7 +134,7 @@ export async function generateOgImage(config: OgImageConfig): Promise<Buffer> {
         children: config.icons.map((svg) => ({
           type: 'img',
           props: {
-            src: svgToDataUri(svg),
+            src: svgToDataUri(roundSvg(svg, 2)),
             width: ICON_SIZE,
             height: ICON_SIZE,
           },
