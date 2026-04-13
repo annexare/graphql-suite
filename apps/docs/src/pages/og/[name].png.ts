@@ -3,7 +3,9 @@ import type { APIRoute, GetStaticPaths } from 'astro'
 import { generateOgImage } from '../../og-image/generate'
 import { drizzleIcon, graphqlIcon, reactIcon, typescriptIcon } from '../../og-image/icons'
 
-const DOMAIN = import.meta.env.SITE ? new URL(import.meta.env.SITE).host : 'graphql-suite.annexare.com'
+const DOMAIN = import.meta.env.SITE
+  ? new URL(import.meta.env.SITE).host
+  : 'graphql-suite.annexare.com'
 
 const variants = [
   {
