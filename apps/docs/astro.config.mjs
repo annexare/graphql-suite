@@ -1,6 +1,7 @@
 import starlight from '@astrojs/starlight'
 import AstroPWA from '@vite-pwa/astro'
 import { defineConfig } from 'astro/config'
+import starlightLlmsTxt from 'starlight-llms-txt'
 
 export default defineConfig({
   site: 'https://graphql-suite.annexare.com',
@@ -128,6 +129,29 @@ export default defineConfig({
           label: 'API Reference',
           autogenerate: { directory: 'reference' },
         },
+      ],
+      plugins: [
+        starlightLlmsTxt({
+          details:
+            'Fetch the Complete documentation file below instead of crawling individual page URLs.',
+          optionalLinks: [
+            {
+              label: 'Sitemap (all page URLs)',
+              url: 'https://graphql-suite.annexare.com/sitemap-index.xml',
+              description: 'Canonical list of every documentation URL',
+            },
+            {
+              label: 'Source on GitHub',
+              url: 'https://github.com/annexare/graphql-suite',
+              description: 'Monorepo with all three packages',
+            },
+            {
+              label: 'npm — @graphql-suite',
+              url: 'https://www.npmjs.com/org/graphql-suite',
+              description: 'Published packages',
+            },
+          ],
+        }),
       ],
     }),
     AstroPWA({
