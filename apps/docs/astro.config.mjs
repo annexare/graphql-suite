@@ -133,7 +133,7 @@ export default defineConfig({
       plugins: [
         starlightLlmsTxt({
           details:
-            'A complete URL inventory of all documentation pages is published at https://graphql-suite.annexare.com/sitemap-index.xml. The full Markdown content of every page is concatenated in llms-full.txt below — fetch that single file instead of crawling individual page URLs.',
+            'Fetch the Complete documentation file below instead of crawling individual page URLs.',
           optionalLinks: [
             {
               label: 'Sitemap (all page URLs)',
