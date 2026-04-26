@@ -12,7 +12,7 @@
   "dependencies": {
     "@astrojs/starlight": "0.38.3",
     "@vite-pwa/astro": "1.2.0",
-    "astro": "6.1.6",
+    "astro": "6.1.9",
     "satori": "0.26.0",
     "sharp": "0.34.5"
   },
