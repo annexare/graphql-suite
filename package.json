@@ -71,7 +71,6 @@
       "@types/react-dom": "19.2.4",
       "drizzle-orm": "0.45.2",
       "graphql": "16.13.2",
-      "graphql-parse-resolve-info": "4.14.1",
       "linkedom": "0.18.13",
       "react": "19.2.8",
       "react-dom": "19.2.8",

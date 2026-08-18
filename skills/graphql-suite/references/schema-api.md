@@ -56,7 +56,47 @@ const { schema: gqlSchema, withPermissions, clearPermissionCache } = buildSchema
 
 **Returns:** `{ schema: GraphQLSchema; entities: GeneratedEntities; withPermissions: (permissions: PermissionConfig) => GraphQLSchema; clearPermissionCache: (id?: string) => void }`
 
+### `parseResolveInfo(info)`
+
+```ts
+function parseResolveInfo(info: GraphQLResolveInfo): ResolveTree | null
+```
+
+Builds a selection tree for the field currently being resolved — what the schema builder uses to
+prune columns and derive nested relation arguments. Exported for use in any custom resolver.
+
+```ts
+import { parseResolveInfo } from '@graphql-suite/schema'
+
+const resolve = (_source, _args, _context, info) => {
+  const tree = parseResolveInfo(info)
+  const selected = Object.keys(tree?.fieldsByTypeName.UserSelectItem ?? {})
+}
+```
+
+Fragments and inline fragments are inlined against their type condition, `@skip` / `@include` are
+applied, arguments are coerced (variables and defaults included), and introspection meta-fields are
+omitted. Returns `null` when `info` carries no usable field node.
+
+Uses only root exports of `graphql`, so one copy of the library serves both graphql 16 and 17. It
+replaces `graphql-parse-resolve-info` (peer range stops at graphql 16) and produces the same
+`ResolveTree` shape.
+
 ## Types
+
+### `ResolveTree`
+
+```ts
+type ResolveTree = {
+  name: string                        // field name in the schema
+  alias: string                       // response key (alias when present)
+  args: Record<string, unknown>       // coerced args, variables and defaults applied
+  fieldsByTypeName: FieldsByTypeName  // sub-selection, keyed by the type it was selected on
+}
+
+type FieldsByTypeName = Record<string, Record<string, ResolveTree>>
+```
+
 
 ### `GeneratedEntities`
 
@@ -359,6 +399,7 @@ catch (e: unknown) {
 - `packages/schema/src/adapters/pg.ts` — PostgreSQL adapter
 - `packages/schema/src/graphql/type-builder.ts` — Drizzle column to GraphQL type converter
 - `packages/schema/src/graphql/scalars.ts` — GraphQLJSON scalar
+- `packages/schema/src/graphql/resolve-info.ts` — `parseResolveInfo()` selection-tree parser
 - `packages/schema/src/data-mappers.ts` — Data transformation between Drizzle and GraphQL
 - `packages/schema/src/case-ops.ts` — String case utilities
 - `packages/schema/src/permissions.ts` — Permission helpers and config merging

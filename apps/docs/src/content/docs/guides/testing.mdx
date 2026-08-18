@@ -98,6 +98,51 @@ test('fetches articles', async () => {
 })
 ```
 
+### Asserting the query a resolver builds
+
+The resolvers prune columns and derive nested relation arguments from the GraphQL selection, so a
+mock that *records* what it was asked for tests that logic directly — no `graphql-yoga` needed, just
+`graphql()`:
+
+```ts
+import { describe, expect, test } from 'bun:test'
+import { buildSchema } from '@graphql-suite/schema'
+import { graphql } from 'graphql'
+
+let calls: { table: string; config: Record<string, unknown> }[] = []
+
+const query = Object.fromEntries(
+  Object.keys(tables).map((name) => [
+    name,
+    {
+      findMany: (config = {}) => {
+        calls.push({ table: name, config })
+        return Promise.resolve([])
+      },
+    },
+  ]),
+)
+
+const { schema } = buildSchema({ _: { fullSchema, schema: tables, tableNamesMap }, query } as any)
+
+test('selects only the requested columns', async () => {
+  calls = []
+  await graphql({ schema, source: '{ article { id title } }' })
+
+  expect(Object.keys(calls[0].config.columns)).toEqual(['id', 'title'])
+})
+
+test('carries relation arguments into the nested query', async () => {
+  calls = []
+  await graphql({ schema, source: '{ article { id comments(limit: 3) { id } } }' })
+
+  expect(calls[0].config.with.comments.limit).toBe(3)
+})
+```
+
+The same tree is available in your own resolvers via
+[`parseResolveInfo`](/reference/schema-api/#parseresolveinfo).
+
 ## Component tests with linkedom
 
 For testing React components that use the query hooks, set up a DOM environment with `linkedom` and mock the GraphQL client.

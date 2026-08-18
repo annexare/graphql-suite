@@ -13,8 +13,11 @@ export const GraphQLJSON = new GraphQLScalarType({
     return value
   },
 
+  // `variables` carries the operation's coerced variable values, so a variable
+  // used inside a JSON literal (`{ theme: $theme }`) resolves to its value
+  // instead of being dropped. graphql 16 and 17 both pass it.
   // biome-ignore lint/suspicious/noExplicitAny: JSON scalar returns dynamic types
-  parseLiteral(ast): any {
+  parseLiteral(ast, variables): any {
     switch (ast.kind) {
       case Kind.STRING:
       case Kind.BOOLEAN:
@@ -26,14 +29,16 @@ export const GraphQLJSON = new GraphQLScalarType({
         // biome-ignore lint/suspicious/noExplicitAny: JSON object accumulator
         const value: Record<string, any> = Object.create(null)
         ast.fields.forEach((field) => {
-          value[field.name.value] = GraphQLJSON.parseLiteral(field.value)
+          value[field.name.value] = GraphQLJSON.parseLiteral(field.value, variables)
         })
         return value
       }
       case Kind.LIST:
-        return ast.values.map((n) => GraphQLJSON.parseLiteral(n))
+        return ast.values.map((n) => GraphQLJSON.parseLiteral(n, variables))
       case Kind.NULL:
         return null
+      case Kind.VARIABLE:
+        return variables?.[ast.name.value]
       default:
         return undefined
     }

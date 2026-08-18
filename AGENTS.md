@@ -197,8 +197,34 @@ Key files to update per area:
 | Hooks | `row-security.test.ts` | `schema/hooks.mdx` | `patterns/hooks-patterns.md` |
 | Codegen | `codegen.test.ts` | `schema/codegen.mdx` | `references/codegen.md` |
 | Type inference | `infer.test.ts` | `client/type-inference.mdx` | `references/client-api.md` |
+| Resolver execution | `schema-execution.test.ts` | `reference/schema-api.mdx` | `references/schema-api.md` |
+| Resolve-info parsing | `graphql/resolve-info.test.ts` | `reference/schema-api.mdx` | `references/schema-api.md` |
 
 Verify after changes:
 - `bun run test` — all tests pass
 - `bun run check-types` — no type errors
 - `cd apps/docs && bun run build` — docs build
+
+## graphql 16 / 17 compatibility
+
+`@graphql-suite/schema` peers on `graphql ^16.4.0 || ^17.0.0` and CI runs the library packages
+against both majors. Anything touching the `graphql` API has to work on both:
+
+- Import only from the `graphql` root — graphql 17 dropped the deep paths (`graphql/execution/values`)
+  that libraries such as `graphql-parse-resolve-info` rely on.
+- Pass `info.variableValues` straight through to `getArgumentValues` / `getDirectiveValues` rather
+  than reading it. Its shape changed in 17 (runtime values moved under `.coerced`).
+- `GraphQLNonNull<T>` requires a nullable `T` in graphql 17. `getNullableType()` narrows a union that
+  might already be wrapped.
+- Custom scalars keep `serialize` / `parseValue` / `parseLiteral` (deprecated in 17, removed in 18).
+  `parseLiteral` takes `(node, variables)` in both.
+
+Run the other lane locally before pushing:
+
+```bash
+bun run scripts/use-graphql.ts 17
+bun run --filter '@graphql-suite/*' check-types && bun run --filter '@graphql-suite/*' test
+bun run scripts/use-graphql.ts 16   # restore the committed default
+```
+
+`example-news-app` stays on graphql 16 — graphql-yoga 5 does not accept 17 yet.

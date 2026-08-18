@@ -133,6 +133,23 @@ Each package has its own **peer dependencies** that you must install alongside i
 
 | Package | Peer dependencies |
 | ------- | ----------------- |
-| `@graphql-suite/schema` | `drizzle-orm >= 0.44.0`, `graphql >= 16.3.0` |
+| `@graphql-suite/schema` | `drizzle-orm >= 0.44.0`, `graphql ^16.4.0 \|\| ^17.0.0` |
 | `@graphql-suite/client` | `drizzle-orm >= 0.44.0` |
 | `@graphql-suite/query` | `react >= 18.0.0`, `@tanstack/react-query >= 5.0.0` |
+
+`@graphql-suite/schema` has no runtime dependencies of its own — `graphql` and `drizzle-orm` are the
+only libraries it loads, and both come from your app.
+
+### graphql 16 or 17
+
+Both majors are supported and both are exercised in CI. Pick whichever your server framework
+supports:
+
+- **graphql 16** — the safe default. Works with graphql-yoga 5, Apollo Server 4, and everything else
+  in the current ecosystem.
+- **graphql 17** — requires **Node 22 or newer**. Adopt it once the rest of your stack accepts it.
+
+Install exactly one copy. Two copies of `graphql` in a single process fail `instanceof` checks
+against each other, and the schema breaks at query time with errors like
+`Cannot use GraphQLNonNull "..." from another module or realm`. If you hit that, check
+`npm ls graphql` (or `bun pm ls graphql`) for a duplicate pulled in by another dependency.

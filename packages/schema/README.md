@@ -25,6 +25,17 @@ bun add graphql-suite
 npm install graphql-suite
 ```
 
+### Peer dependencies
+
+| Peer | Range |
+| ---- | ----- |
+| `drizzle-orm` | `>= 0.44.0` |
+| `graphql` | `^16.4.0 \|\| ^17.0.0` |
+
+Both graphql majors are supported and both run in CI. graphql 17 requires Node 22 or newer. This
+package has no runtime dependencies of its own — install exactly one copy of `graphql`, since two
+copies in one process fail `instanceof` checks against each other.
+
 ## Motivation
 
 Inspired by [`drizzle-graphql`](https://github.com/drizzle-team/drizzle-graphql), this package is a purpose-built replacement focused on PostgreSQL. Key improvements:
@@ -42,6 +53,7 @@ Inspired by [`drizzle-graphql`](https://github.com/drizzle-team/drizzle-graphql)
 - **Relation pruning** — `false`, `'leaf'`, or `{ only: [...] }` per relation
 - **`buildSchemaFromDrizzle()`** — no database connection needed (for codegen/introspection)
 - **Code generation** — `generateSDL`, `generateTypes`, `generateEntityDefs`
+- **No runtime dependencies** — only the `graphql` and `drizzle-orm` peers, with support for graphql 16 and 17
 - **Architecture** — TypeScript source, PostgreSQL-only, `SchemaBuilder` class, type caching, lazy thunks for circular relations
 - **Bug fixes** — relation filter join conditions (Drizzle v0.44+), operator map replacements, `catch (e: unknown)` narrowing
 
@@ -118,6 +130,29 @@ import * as schema from './db/schema'
 
 const { schema: graphqlSchema } = buildSchemaFromDrizzle(schema)
 ```
+
+### `parseResolveInfo(info)`
+
+Builds a selection tree for the field currently being resolved — the same one the schema builder
+uses to prune columns and derive nested relation arguments. Useful in custom resolvers.
+
+```ts
+import { parseResolveInfo } from '@graphql-suite/schema'
+
+const resolve = (_source, _args, _context, info) => {
+  const tree = parseResolveInfo(info)
+  const selected = Object.keys(tree?.fieldsByTypeName.UserSelectItem ?? {})
+  // ['id', 'email'] for `{ users { id email } }`
+}
+```
+
+Fragments and inline fragments are inlined against their type condition, `@skip` / `@include` are
+applied, arguments are coerced (variables and defaults included), and introspection meta-fields are
+omitted. Returns `null` when `info` carries no usable field node.
+
+It builds on root exports of `graphql` only, so one copy of the library serves both graphql 16 and
+17 — replacing [`graphql-parse-resolve-info`](https://www.npmjs.com/package/graphql-parse-resolve-info),
+whose peer range stops at graphql 16, with the same `ResolveTree` shape.
 
 ## Configuration
 

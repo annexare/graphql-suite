@@ -59,6 +59,7 @@ Inspired by [`drizzle-graphql`](https://github.com/drizzle-team/drizzle-graphql)
 | `buildEntities` | Returns the `GeneratedEntities` object (queries, mutations, inputs, types) without building a full schema. Useful for composing into an existing GraphQL schema. |
 | `SchemaBuilder` | The underlying class, exposed for advanced use cases. |
 | `GraphQLJSON` | Custom scalar for JSONB columns. |
+| `parseResolveInfo` | Selection tree for the field being resolved. Useful in custom resolvers. |
 | `generateSDL` | Generate SDL string from a Drizzle schema (codegen utility). |
 | `generateTypes` | Generate TypeScript type definitions from a Drizzle schema (codegen utility). |
 | `generateEntityDefs` | Generate entity definition types for the client package. |

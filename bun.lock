@@ -89,9 +89,6 @@
     "packages/schema": {
       "name": "@graphql-suite/schema",
       "version": "0.9.1",
-      "dependencies": {
-        "graphql-parse-resolve-info": "catalog:",
-      },
       "devDependencies": {
         "@types/bun": "catalog:",
         "drizzle-orm": "catalog:",
@@ -100,7 +97,7 @@
       },
       "peerDependencies": {
         "drizzle-orm": ">=0.44.0",
-        "graphql": ">=16.3.0",
+        "graphql": "^16.4.0 || ^17.0.0",
       },
     },
   },
@@ -112,7 +109,6 @@
     "@types/react-dom": "19.2.4",
     "drizzle-orm": "0.45.2",
     "graphql": "16.13.2",
-    "graphql-parse-resolve-info": "4.14.1",
     "linkedom": "0.18.13",
     "react": "19.2.8",
     "react-dom": "19.2.8",
@@ -1154,8 +1150,6 @@
     "graceful-fs": ["graceful-fs@4.2.11", "", {}, "sha512-RbJ5/jmFcNNCcDV5o9eTnBLJ/HszWV0P73bc+Ff4nS/rJj+YaS6IGyiOL0VoBYX+l1Wrl3k63h/KrH+nhJ0XvQ=="],
 
     "graphql": ["graphql@16.13.2", "", {}, "sha512-5bJ+nf/UCpAjHM8i06fl7eLyVC9iuNAjm9qzkiu2ZGhM0VscSvS6WDPfAwkdkBuoXGM9FJSbKl6wylMwP9Ktig=="],
-
-    "graphql-parse-resolve-info": ["graphql-parse-resolve-info@4.14.1", "", { "dependencies": { "debug": "^4.1.1", "tslib": "^2.0.1" }, "peerDependencies": { "graphql": ">=0.9 <0.14 || ^14.0.2 || ^15.4.0 || ^16.3.0" } }, "sha512-WKHukfEuZamP1ZONR84b8iT+4sJgEhtXMDArm1jpXEsU2vTb5EgkCZ4Obfl+v09oNTKXm0CJjPfBUZ5jcJ2Ykg=="],
 
     "graphql-yoga": ["graphql-yoga@5.21.0", "", { "dependencies": { "@envelop/core": "^5.5.1", "@envelop/instrumentation": "^1.0.0", "@graphql-tools/executor": "^1.5.0", "@graphql-tools/schema": "^10.0.11", "@graphql-tools/utils": "^10.11.0", "@graphql-yoga/logger": "^2.0.1", "@graphql-yoga/subscription": "^5.0.5", "@whatwg-node/fetch": "^0.10.6", "@whatwg-node/promise-helpers": "^1.3.2", "@whatwg-node/server": "^0.10.14", "lru-cache": "^10.0.0", "tslib": "^2.8.1" }, "peerDependencies": { "graphql": "^15.2.0 || ^16.0.0" } }, "sha512-PS37UoDihx8209RRl1ogttzWevNYDnGvP7beHkwHzUpUdfZTHsVRTVe1ysGXre1EjwUAePbpez302YSrq70Ngw=="],
 

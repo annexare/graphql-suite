@@ -32,10 +32,7 @@
   },
   "peerDependencies": {
     "drizzle-orm": ">=0.44.0",
-    "graphql": ">=16.3.0"
-  },
-  "dependencies": {
-    "graphql-parse-resolve-info": "catalog:"
+    "graphql": "^16.4.0 || ^17.0.0"
   },
   "devDependencies": {
     "@types/bun": "catalog:",

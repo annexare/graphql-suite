@@ -51,10 +51,9 @@ import {
   GraphQLObjectType,
   GraphQLSchema,
   GraphQLString,
+  getNullableType,
   printSchema,
 } from 'graphql'
-import type { ResolveTree } from 'graphql-parse-resolve-info'
-import { parseResolveInfo } from 'graphql-parse-resolve-info'
 
 import { PgAdapter } from './adapters/pg'
 import type { DbAdapter } from './adapters/types'
@@ -67,6 +66,8 @@ import {
   remapToGraphQLSingleOutput,
   type TableNamedRelations,
 } from './data-mappers'
+import type { ResolveTree } from './graphql/resolve-info'
+import { parseResolveInfo } from './graphql/resolve-info'
 import { type ConvertedColumn, drizzleColumnToGraphQLType } from './graphql/type-builder'
 import { mergePermissionsIntoConfig, postFilterMutations } from './permissions'
 import type {
@@ -631,15 +632,19 @@ export class SchemaBuilder {
       false,
       true,
     )
-    const columnArr = new GraphQLList(new GraphQLNonNull(columnGraphQLType.type))
+    // Filters are always optional, so `forceNullable` above already unwrapped
+    // any non-null wrapper. Restating that for the type system keeps graphql
+    // 17 happy, where `GraphQLNonNull<T>` requires a nullable `T`.
+    const filterType = getNullableType(columnGraphQLType.type)
+    const columnArr = new GraphQLList(new GraphQLNonNull(filterType))
 
     const baseFields = {
-      eq: { type: columnGraphQLType.type, description: columnGraphQLType.description },
-      ne: { type: columnGraphQLType.type, description: columnGraphQLType.description },
-      lt: { type: columnGraphQLType.type, description: columnGraphQLType.description },
-      lte: { type: columnGraphQLType.type, description: columnGraphQLType.description },
-      gt: { type: columnGraphQLType.type, description: columnGraphQLType.description },
-      gte: { type: columnGraphQLType.type, description: columnGraphQLType.description },
+      eq: { type: filterType, description: columnGraphQLType.description },
+      ne: { type: filterType, description: columnGraphQLType.description },
+      lt: { type: filterType, description: columnGraphQLType.description },
+      lte: { type: filterType, description: columnGraphQLType.description },
+      gt: { type: filterType, description: columnGraphQLType.description },
+      gte: { type: filterType, description: columnGraphQLType.description },
       like: { type: GraphQLString },
       notLike: { type: GraphQLString },
       ilike: { type: GraphQLString },
@@ -926,7 +931,7 @@ export class SchemaBuilder {
           try {
             const { offset, limit, orderBy, where } = finalArgs
 
-            const parsedInfo = parseResolveInfo(info, { deep: true }) as ResolveTree
+            const parsedInfo = parseResolveInfo(info)
 
             const query = queryBase.findMany({
               columns: this.extractColumns(this.getFieldsByTypeName(parsedInfo, typeName), table),
@@ -1001,7 +1006,7 @@ export class SchemaBuilder {
           try {
             const { offset, orderBy, where } = finalArgs
 
-            const parsedInfo = parseResolveInfo(info, { deep: true }) as ResolveTree
+            const parsedInfo = parseResolveInfo(info)
 
             const query = queryBase.findFirst({
               columns: this.extractColumns(this.getFieldsByTypeName(parsedInfo, typeName), table),
@@ -1110,7 +1115,7 @@ export class SchemaBuilder {
             const input = remapFromGraphQLArrayInput(finalArgs.values, table)
             if (!input.length) throw new GraphQLError('No values were provided!')
 
-            const parsedInfo = parseResolveInfo(info, { deep: true }) as ResolveTree
+            const parsedInfo = parseResolveInfo(info)
             const columns = this.extractColumnsSQLFormat(
               this.getFieldsByTypeName(parsedInfo, typeName),
               table,
@@ -1164,7 +1169,7 @@ export class SchemaBuilder {
           try {
             const input = remapFromGraphQLSingleInput(finalArgs.values, table)
 
-            const parsedInfo = parseResolveInfo(info, { deep: true }) as ResolveTree
+            const parsedInfo = parseResolveInfo(info)
             const columns = this.extractColumnsSQLFormat(
               this.getFieldsByTypeName(parsedInfo, typeName),
               table,
@@ -1225,7 +1230,7 @@ export class SchemaBuilder {
           try {
             const { where, set } = finalArgs
 
-            const parsedInfo = parseResolveInfo(info, { deep: true }) as ResolveTree
+            const parsedInfo = parseResolveInfo(info)
             const columns = this.extractColumnsSQLFormat(
               this.getFieldsByTypeName(parsedInfo, typeName),
               table,
@@ -1291,7 +1296,7 @@ export class SchemaBuilder {
           try {
             const { where } = finalArgs
 
-            const parsedInfo = parseResolveInfo(info, { deep: true }) as ResolveTree
+            const parsedInfo = parseResolveInfo(info)
             const columns = this.extractColumnsSQLFormat(
               this.getFieldsByTypeName(parsedInfo, typeName),
               table,
@@ -1702,15 +1707,19 @@ export class SchemaBuilder {
 
   // ─── Resolve Info Parsing ────────────────────────────────────
 
-  private getFieldsByTypeName(info: ResolveTree, typeName: string): Record<string, ResolveTree> {
-    return info.fieldsByTypeName[typeName] ?? {}
+  private getFieldsByTypeName(
+    info: ResolveTree | null,
+    typeName: string,
+  ): Record<string, ResolveTree> {
+    return info?.fieldsByTypeName[typeName] ?? {}
   }
 
   private extractRelationsParams(
     tableName: string,
-    info: ResolveTree,
+    info: ResolveTree | null,
     typeName: string,
   ): Record<string, Partial<ProcessedTableSelectArgs>> | undefined {
+    if (!info) return undefined
     return this.extractRelationsParamsInner(tableName, typeName, info, true)
   }
 

@@ -25,19 +25,28 @@ import {
 import { capitalize } from '../case-ops'
 import { GraphQLJSON } from './scalars'
 
+/**
+ * The GraphQL types a Drizzle column maps to before nullability is applied.
+ *
+ * Kept free of `GraphQLNonNull` on purpose: graphql 17 narrowed
+ * `GraphQLNonNull<T>` to `T extends GraphQLNullableType`, so a union that
+ * already contains a non-null wrapper can no longer be wrapped again.
+ */
+export type ConvertedColumnType<TIsInput extends boolean = false> =
+  | GraphQLScalarType
+  | GraphQLEnumType
+  | GraphQLList<GraphQLScalarType>
+  | GraphQLList<GraphQLNonNull<GraphQLScalarType>>
+  | (TIsInput extends true ? GraphQLInputObjectType : GraphQLObjectType)
+
 export type ConvertedColumn<TIsInput extends boolean = false> = {
-  type:
-    | GraphQLScalarType
-    | GraphQLEnumType
-    | GraphQLNonNull<GraphQLScalarType>
-    | GraphQLNonNull<GraphQLEnumType>
-    | GraphQLList<GraphQLScalarType>
-    | GraphQLList<GraphQLNonNull<GraphQLScalarType>>
-    | GraphQLNonNull<GraphQLList<GraphQLScalarType>>
-    | GraphQLNonNull<GraphQLList<GraphQLNonNull<GraphQLScalarType>>>
-    | (TIsInput extends true
-        ? GraphQLInputObjectType | GraphQLNonNull<GraphQLInputObjectType>
-        : GraphQLObjectType | GraphQLNonNull<GraphQLObjectType>)
+  type: ConvertedColumnType<TIsInput> | GraphQLNonNull<ConvertedColumnType<TIsInput>>
+  description?: string
+}
+
+/** A column type that is guaranteed not to be wrapped in `GraphQLNonNull`. */
+export type ConvertedNullableColumn<TIsInput extends boolean = false> = {
+  type: ConvertedColumnType<TIsInput>
   description?: string
 }
 
@@ -95,7 +104,7 @@ const columnToGraphQLCore = (
   columnName: string,
   tableName: string,
   isInput: boolean,
-): ConvertedColumn<boolean> => {
+): ConvertedNullableColumn<boolean> => {
   switch (column.dataType) {
     case 'boolean':
       return { type: GraphQLBoolean, description: 'Boolean' }

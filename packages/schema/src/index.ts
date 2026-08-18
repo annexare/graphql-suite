@@ -5,6 +5,8 @@ import type { GraphQLSchema } from 'graphql'
 import { SchemaBuilder } from './schema-builder'
 import type { BuildSchemaConfig, GeneratedEntities, PermissionConfig } from './types'
 
+export type { FieldsByTypeName, ResolveTree } from './graphql/resolve-info'
+export { parseResolveInfo } from './graphql/resolve-info'
 export { GraphQLJSON } from './graphql/scalars'
 
 export const buildSchema = (
