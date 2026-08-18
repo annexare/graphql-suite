@@ -80,7 +80,7 @@ function svgToDataUri(svg: string): string {
 type SatoriNode = Record<string, any>
 
 // Satori accepts a plain `{ type, props }` tree, but types its parameter as
-// React's `ReactNode`. Borrow that parameter type for the single cast below.
+// React's `ReactNode`. Borrow that parameter type for the casts below.
 type SatoriElement = Parameters<typeof satori>[0]
 
 // ─── Generator ───────────────────────────────────────────────
