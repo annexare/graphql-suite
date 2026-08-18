@@ -35,7 +35,7 @@
   "linter": {
     "enabled": true,
     "rules": {
-      "recommended": true,
+      "preset": "recommended",
       "correctness": {
         "noUndeclaredVariables": "error",
         "noUnsafeOptionalChaining": "error",

@@ -64,18 +64,18 @@
       "apps/*"
     ],
     "catalog": {
-      "@biomejs/biome": "2.4.11",
-      "@tanstack/react-query": "5.99.0",
-      "@types/bun": "1.3.12",
-      "@types/react": "19.2.14",
-      "@types/react-dom": "19.2.3",
+      "@biomejs/biome": "2.5.9",
+      "@tanstack/react-query": "5.101.4",
+      "@types/bun": "1.3.14",
+      "@types/react": "19.2.18",
+      "@types/react-dom": "19.2.4",
       "drizzle-orm": "0.45.2",
       "graphql": "16.13.2",
       "graphql-parse-resolve-info": "4.14.1",
-      "linkedom": "0.18.12",
-      "react": "19.2.5",
-      "react-dom": "19.2.5",
-      "typescript": "6.0.2"
+      "linkedom": "0.18.13",
+      "react": "19.2.8",
+      "react-dom": "19.2.8",
+      "typescript": "7.0.2"
     }
   },
   "scripts": {
