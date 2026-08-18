@@ -185,7 +185,9 @@ export default defineConfig({
         ],
       },
       workbox: {
-        navigateFallback: '/404.html',
+        // `/404.html` 308-redirects to `/404`, which is also how the page is
+        // precached, so the fallback must name the served URL to resolve offline.
+        navigateFallback: '/404',
         runtimeCaching: [
           {
             urlPattern: /\.(?:html|css|js|svg|png|jpg|woff2?)$/i,
