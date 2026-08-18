@@ -55,7 +55,8 @@ export default function pwa(options = {}) {
             dontCacheBustURLsMatching: new RegExp(assets),
             ...workbox,
             // Rewrite built `.html` paths to the URLs Astro actually serves.
-            manifestTransforms: [manifestTransform(ctx)],
+            // Appended so a caller-supplied transform still runs, and runs first.
+            manifestTransforms: [...(workbox.manifestTransforms ?? []), manifestTransform(ctx)],
           },
         })
 
