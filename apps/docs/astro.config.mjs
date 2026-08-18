@@ -1,7 +1,8 @@
 import starlight from '@astrojs/starlight'
-import AstroPWA from '@vite-pwa/astro'
 import { defineConfig } from 'astro/config'
 import starlightLlmsTxt from 'starlight-llms-txt'
+
+import pwa from './integrations/pwa.mjs'
 
 export default defineConfig({
   site: 'https://graphql-suite.annexare.com',
@@ -37,7 +38,7 @@ export default defineConfig({
           attrs: { rel: 'manifest', href: '/manifest.webmanifest' },
         },
         {
-          // Manual SW registration required — @vite-pwa/astro cannot inject
+          // Manual SW registration required — the PWA integration cannot inject
           // scripts into Starlight's HTML output (known Astro limitation)
           tag: 'script',
           attrs: {},
@@ -107,27 +108,27 @@ export default defineConfig({
       sidebar: [
         {
           label: 'Getting Started',
-          autogenerate: { directory: 'getting-started' },
+          items: [{ autogenerate: { directory: 'getting-started' } }],
         },
         {
           label: 'Schema Package',
-          autogenerate: { directory: 'schema' },
+          items: [{ autogenerate: { directory: 'schema' } }],
         },
         {
           label: 'Client Package',
-          autogenerate: { directory: 'client' },
+          items: [{ autogenerate: { directory: 'client' } }],
         },
         {
           label: 'Query Package',
-          autogenerate: { directory: 'query' },
+          items: [{ autogenerate: { directory: 'query' } }],
         },
         {
           label: 'Guides',
-          autogenerate: { directory: 'guides' },
+          items: [{ autogenerate: { directory: 'guides' } }],
         },
         {
           label: 'API Reference',
-          autogenerate: { directory: 'reference' },
+          items: [{ autogenerate: { directory: 'reference' } }],
         },
       ],
       plugins: [
@@ -154,7 +155,7 @@ export default defineConfig({
         }),
       ],
     }),
-    AstroPWA({
+    pwa({
       registerType: 'autoUpdate',
       injectRegister: false,
       manifest: {
@@ -184,7 +185,9 @@ export default defineConfig({
         ],
       },
       workbox: {
-        navigateFallback: '/404.html',
+        // `/404.html` 308-redirects to `/404`, which is also how the page is
+        // precached, so the fallback must name the served URL to resolve offline.
+        navigateFallback: '/404',
         runtimeCaching: [
           {
             urlPattern: /\.(?:html|css|js|svg|png|jpg|woff2?)$/i,

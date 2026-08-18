@@ -79,9 +79,13 @@ function svgToDataUri(svg: string): string {
 // biome-ignore lint/suspicious/noExplicitAny: Satori element tree uses loose types
 type SatoriNode = Record<string, any>
 
+// Satori accepts a plain `{ type, props }` tree, but types its parameter as
+// React's `ReactNode`. Borrow that parameter type for the casts below.
+type SatoriElement = Parameters<typeof satori>[0]
+
 // ─── Generator ───────────────────────────────────────────────
 
-export async function generateOgImage(config: OgImageConfig): Promise<Buffer> {
+export async function generateOgImage(config: OgImageConfig): Promise<Uint8Array<ArrayBuffer>> {
   const [, fontRegular, fontBold] = await loadFonts()
 
   const accentColor = config.accentColor ?? '#e535ab'
@@ -195,7 +199,7 @@ export async function generateOgImage(config: OgImageConfig): Promise<Buffer> {
     },
   }
 
-  const svg = await satori(element, {
+  const svg = await satori(element as SatoriElement, {
     width: WIDTH,
     height: HEIGHT,
     fonts: [
@@ -204,12 +208,12 @@ export async function generateOgImage(config: OgImageConfig): Promise<Buffer> {
     ],
   })
 
-  return await sharp(Buffer.from(svg)).png({ compressionLevel: 9 }).toBuffer()
+  return new Uint8Array(await sharp(Buffer.from(svg)).png({ compressionLevel: 9 }).toBuffer())
 }
 
 // ─── App Icon Generator ──────────────────────────────────────
 
-export async function generateAppIcon(config: AppIconConfig): Promise<Buffer> {
+export async function generateAppIcon(config: AppIconConfig): Promise<Uint8Array<ArrayBuffer>> {
   const [fontLight, , fontBold] = await loadFonts()
 
   const accentColor = config.accentColor ?? '#e535ab'
@@ -316,7 +320,7 @@ export async function generateAppIcon(config: AppIconConfig): Promise<Buffer> {
     },
   }
 
-  const svg = await satori(element, {
+  const svg = await satori(element as SatoriElement, {
     width: size,
     height: size,
     fonts: [
@@ -325,5 +329,5 @@ export async function generateAppIcon(config: AppIconConfig): Promise<Buffer> {
     ],
   })
 
-  return await sharp(Buffer.from(svg)).png({ compressionLevel: 9 }).toBuffer()
+  return new Uint8Array(await sharp(Buffer.from(svg)).png({ compressionLevel: 9 }).toBuffer())
 }
