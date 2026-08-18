@@ -178,9 +178,11 @@ async function run(
   return result
 }
 
-/** Columns the last `findMany` asked Drizzle for. */
-const selectedColumns = (index = 0) =>
-  Object.keys(recorded.findMany[index]?.config.columns ?? {}).sort()
+/** Reads a response key by value, so `__proto__` stays a key and not an accessor. */
+const at = <T>(map: Record<string, T>, key: string): T | undefined => map[key]
+
+/** Columns the recorded `findMany` asked Drizzle for, sorted for stable comparison. */
+const selectedColumns = () => Object.keys(recorded.findMany[0]?.config.columns ?? {}).sort()
 
 // ─── Tests ───────────────────────────────────────────────────
 
@@ -235,6 +237,20 @@ describe('list query execution', () => {
     await run('{ author { id ... on AuthorSelectItem { bio } } }')
 
     expect(selectedColumns()).toEqual(['bio', 'id'])
+  })
+
+  // `__proto__` is a legal GraphQL alias, and a plain-object selection map would
+  // silently swallow the column instead of selecting it.
+  test('keeps a column aliased __proto__', async () => {
+    rows = [{ id: 'a1', name: 'Ada' }]
+
+    const result = await run('{ author { __proto__: name id } }')
+    // biome-ignore lint/suspicious/noExplicitAny: reading into the raw response
+    const row = (result.data as any).author[0] as Record<string, unknown>
+
+    expect(selectedColumns()).toEqual(['id', 'name'])
+    expect(Object.keys(row).sort()).toEqual(['__proto__', 'id'])
+    expect(at(row, '__proto__')).toBe('Ada')
   })
 
   test('honours @skip and @include when choosing columns', async () => {
@@ -295,6 +311,15 @@ describe('relation selection', () => {
     expect(posts?.offset).toBe(6)
     expect(posts?.where).toBeDefined()
     expect(posts?.orderBy).toHaveLength(1)
+  })
+
+  test('walks a relation aliased __proto__ or constructor', async () => {
+    await run('{ author { id __proto__: posts { title } constructor: posts { body } } }')
+
+    // Both aliases resolve the same relation, so the first one seen wins — the
+    // point is that neither collides with an inherited property.
+    expect(Object.keys(recorded.findMany[0]?.config.with ?? {})).toEqual(['posts'])
+    expect(Object.keys(recorded.findMany[0]?.config.with?.posts?.columns ?? {})).toEqual(['title'])
   })
 
   test('resolves relation arguments supplied as variables', async () => {

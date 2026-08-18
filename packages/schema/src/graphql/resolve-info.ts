@@ -39,6 +39,14 @@ export type ResolveTree = {
 // ─── Public API ──────────────────────────────────────────────
 
 /**
+ * A map keyed by names the client controls — response keys and type names.
+ * Null-prototype, because `__proto__` and `constructor` are legal GraphQL
+ * aliases: on a plain object the first silently rewires the prototype and the
+ * second reads back `Object`, so a valid query would lose a column or crash.
+ */
+const record = <T>(): Record<string, T> => Object.create(null)
+
+/**
  * Build a selection tree for the field currently being resolved.
  *
  * Replaces `graphql-parse-resolve-info`, which is pinned to graphql 16 and
@@ -52,7 +60,7 @@ export const parseResolveInfo = (info: GraphQLResolveInfo): ResolveTree | null =
   const { fieldNodes, parentType } = info
   if (!fieldNodes?.length) return null
 
-  const tree: FieldsByTypeName = {}
+  const tree = record<Record<string, ResolveTree>>()
   collectFields(fieldNodes, info, tree, parentType)
 
   // `collectFields` files the executing field under its parent type; there is
@@ -78,7 +86,7 @@ const collectFields = (
   const typeName = parentType.name
   let fields = tree[typeName]
   if (!fields) {
-    fields = {}
+    fields = record<ResolveTree>()
     tree[typeName] = fields
   }
 
@@ -100,11 +108,14 @@ const collectFields = (
 
         let node = fields[alias]
         if (!node) {
+          const fieldsByTypeName = record<Record<string, ResolveTree>>()
+          if (isCompositeType(fieldType)) fieldsByTypeName[fieldType.name] = record<ResolveTree>()
+
           node = {
             name,
             alias,
             args: getArgumentValues(fieldDef, selection, info.variableValues),
-            fieldsByTypeName: isCompositeType(fieldType) ? { [fieldType.name]: {} } : {},
+            fieldsByTypeName,
           }
           fields[alias] = node
         }

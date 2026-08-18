@@ -27,7 +27,9 @@ if (!requested) {
 }
 
 const version = PINS[requested] ?? requested
-if (!/^\d+\.\d+\.\d+/.test(version)) {
+// Anchored, so a typo like "17.0.2x" is rejected rather than written to the
+// catalog for `bun install` to fail on later. Prerelease tags are allowed.
+if (!/^\d+\.\d+\.\d+(-[\w.]+)?$/.test(version)) {
   console.error(
     `Unknown graphql version "${requested}". Known majors: ${Object.keys(PINS).join(', ')}`,
   )

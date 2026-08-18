@@ -107,7 +107,15 @@ mock that *records* what it was asked for tests that logic directly — no `grap
 ```ts
 import { describe, expect, test } from 'bun:test'
 import { buildSchema } from '@graphql-suite/schema'
+import { createTableRelationsHelpers, extractTablesRelationalConfig } from 'drizzle-orm'
 import { graphql } from 'graphql'
+
+import * as drizzleSchema from './db/schema'
+
+const { tables, tableNamesMap } = extractTablesRelationalConfig(
+  drizzleSchema,
+  createTableRelationsHelpers,
+)
 
 let calls: { table: string; config: Record<string, unknown> }[] = []
 
@@ -123,7 +131,9 @@ const query = Object.fromEntries(
   ]),
 )
 
-const { schema } = buildSchema({ _: { fullSchema, schema: tables, tableNamesMap }, query } as any)
+// biome-ignore lint/suspicious/noExplicitAny: mock db for testing
+const mockDb = { _: { fullSchema: drizzleSchema, schema: tables, tableNamesMap }, query } as any
+const { schema } = buildSchema(mockDb)
 
 test('selects only the requested columns', async () => {
   calls = []

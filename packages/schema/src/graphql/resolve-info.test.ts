@@ -119,6 +119,9 @@ const fields = (tree: ResolveTree | null, typeName: string) =>
 /** Response keys selected on a type — what the resolver ultimately reads. */
 const keys = (tree: ResolveTree | null, typeName: string) => Object.keys(fields(tree, typeName))
 
+/** Reads a response key by value, so `__proto__` stays a key and not an accessor. */
+const at = <T>(map: Record<string, T>, key: string): T | undefined => map[key]
+
 // ─── Tests ───────────────────────────────────────────────────
 
 describe('parseResolveInfo', () => {
@@ -156,6 +159,26 @@ describe('parseResolveInfo', () => {
     expect(keys(tree, 'Node')).toEqual(['a', 'b'])
     expect(fields(tree, 'Node').a?.args.limit).toBe(1)
     expect(fields(tree, 'Node').b?.args.limit).toBe(2)
+  })
+
+  // `__proto__` and `constructor` are legal GraphQL aliases. On a plain object
+  // the first rewires the prototype and the second reads back `Object`, so the
+  // selection maps have to be null-prototype.
+  test('treats __proto__ and constructor as ordinary aliases', async () => {
+    const tree = await parseInfo('{ root { __proto__: id constructor: name } }')
+    const selected = fields(tree, 'Node')
+
+    expect(Object.keys(selected)).toEqual(['__proto__', 'constructor'])
+    expect(at(selected, '__proto__')?.name).toBe('id')
+    expect(at(selected, 'constructor')?.name).toBe('name')
+  })
+
+  test('walks the sub-selection of a field aliased __proto__', async () => {
+    const tree = await parseInfo('{ root { __proto__: children { id } } }')
+    const aliased = at(fields(tree, 'Node'), '__proto__')
+
+    expect(aliased?.name).toBe('children')
+    expect(Object.keys(aliased?.fieldsByTypeName.Node ?? {})).toEqual(['id'])
   })
 
   test('coerces literal arguments and applies argument defaults', async () => {
