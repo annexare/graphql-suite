@@ -15,7 +15,7 @@ import { join, resolve } from 'node:path'
 
 // Versions each major is tested against. Bump when a new release should be
 // covered; `16` doubles as the version committed to the catalog.
-const PINS: Record<string, string> = {
+const pins: Record<string, string> = {
   '16': '16.13.2',
   '17': '17.0.2',
 }
@@ -26,12 +26,12 @@ if (!requested) {
   process.exit(1)
 }
 
-const version = PINS[requested] ?? requested
+const version = pins[requested] ?? requested
 // Anchored, so a typo like "17.0.2x" is rejected rather than written to the
 // catalog for `bun install` to fail on later. Prerelease tags are allowed.
 if (!/^\d+\.\d+\.\d+(-[\w.]+)?$/.test(version)) {
   console.error(
-    `Unknown graphql version "${requested}". Known majors: ${Object.keys(PINS).join(', ')}`,
+    `Unknown graphql version "${requested}". Known majors: ${Object.keys(pins).join(', ')}`,
   )
   process.exit(1)
 }

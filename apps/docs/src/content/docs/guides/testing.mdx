@@ -117,13 +117,20 @@ const { tables, tableNamesMap } = extractTablesRelationalConfig(
   createTableRelationsHelpers,
 )
 
-let calls: { table: string; config: Record<string, unknown> }[] = []
+type FindConfig = {
+  columns?: Record<string, true>
+  with?: Record<string, FindConfig>
+  limit?: number
+  offset?: number
+}
+
+let calls: { table: string; config: FindConfig }[] = []
 
 const query = Object.fromEntries(
   Object.keys(tables).map((name) => [
     name,
     {
-      findMany: (config = {}) => {
+      findMany: (config: FindConfig = {}) => {
         calls.push({ table: name, config })
         return Promise.resolve([])
       },
@@ -139,14 +146,14 @@ test('selects only the requested columns', async () => {
   calls = []
   await graphql({ schema, source: '{ article { id title } }' })
 
-  expect(Object.keys(calls[0].config.columns)).toEqual(['id', 'title'])
+  expect(Object.keys(calls[0]?.config.columns ?? {})).toEqual(['id', 'title'])
 })
 
 test('carries relation arguments into the nested query', async () => {
   calls = []
   await graphql({ schema, source: '{ article { id comments(limit: 3) { id } } }' })
 
-  expect(calls[0].config.with.comments.limit).toBe(3)
+  expect(calls[0]?.config.with?.comments?.limit).toBe(3)
 })
 ```
 
