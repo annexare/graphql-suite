@@ -207,8 +207,9 @@ Verify after changes:
 
 ## graphql 16 / 17 compatibility
 
-`@graphql-suite/schema` peers on `graphql ^16.4.0 || ^17.0.0` and CI runs the library packages
-against both majors. Anything touching the `graphql` API has to work on both:
+`@graphql-suite/schema` peers on `graphql ^16.4.0 || ^17.0.0`, and CI runs the whole workspace
+against the three versions that define that range: `16.4.0` (the floor), `16.14.2` (the newest 16)
+and `17.0.2`. Anything touching the `graphql` API has to work across all of them:
 
 - Import only from the `graphql` root — graphql 17 dropped the deep paths (`graphql/execution/values`)
   that libraries such as `graphql-parse-resolve-info` rely on.
@@ -219,13 +220,14 @@ against both majors. Anything touching the `graphql` API has to work on both:
 - Custom scalars keep `serialize` / `parseValue` / `parseLiteral` (deprecated in 17, removed in 18).
   `parseLiteral` takes `(node, variables)` in both.
 
-Run the other lane locally before pushing:
+Run another lane locally before pushing:
 
 ```bash
-bun run scripts/use-graphql.ts 17
+bun run scripts/use-graphql.ts 17    # or `min` for the 16.4.0 floor
 bun run check-types && bun run test
-bun run scripts/use-graphql.ts 16   # restore the committed default
+bun run scripts/use-graphql.ts 16    # restore the committed default
 ```
 
-The whole workspace runs on both majors, `example-news-app` included —
-graphql-yoga accepts graphql 17 from 5.22.0 onwards.
+`example-news-app` is included on every lane — graphql-yoga accepts graphql 17 from 5.22.0 onwards.
+Moving the peer floor means checking the API the parser relies on is present in that release, then
+updating the matrix in `.github/workflows/ci.yml` and the shorthands in `scripts/use-graphql.ts`.

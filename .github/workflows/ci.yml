@@ -28,11 +28,24 @@ jobs:
 
       - run: bun run test
 
-  # Both graphql majors are supported, so the whole workspace — library
-  # packages and the example app — is built, typed and tested against each.
-  # Linting is version-independent and stays in the job above.
-  graphql-17:
+  # `@graphql-suite/schema` declares `graphql: ^16.4.0 || ^17.0.0`, so the
+  # versions that define that range are each built, type-checked and tested
+  # across the whole workspace — the library packages and the example app.
+  #
+  #   16.4.0   the declared floor (the release where `getArgumentValues`
+  #            became a root export, which the resolve-info parser needs)
+  #   16.14.2  the newest graphql 16, i.e. what `^16` installs today
+  #   17.0.2   the newest graphql 17
+  #
+  # Linting is version-independent and stays in the job above, which also
+  # covers the committed lockfile.
+  graphql:
+    name: graphql ${{ matrix.graphql }}
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        graphql: ['16.4.0', '16.14.2', '17.0.2']
     steps:
       - uses: actions/checkout@v6
         with:
@@ -42,7 +55,7 @@ jobs:
         with:
           bun-version: 1.3.11
 
-      - run: bun run scripts/use-graphql.ts 17
+      - run: bun run scripts/use-graphql.ts ${{ matrix.graphql }}
 
       - run: bun run build
 

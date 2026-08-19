@@ -1,28 +1,32 @@
 /**
- * Pin the workspace to a graphql major and reinstall.
+ * Pin the workspace to a graphql version and reinstall.
  *
  * `@graphql-suite/schema` supports graphql 16 and 17, and CI runs the suite
- * against both. Use this to reproduce either lane locally:
+ * against the floor, the newest 16 and the newest 17. Use this to reproduce any
+ * of those lanes locally:
  *
- *   bun run scripts/use-graphql.ts 17
- *   bun run --filter '@graphql-suite/*' test
- *   bun run scripts/use-graphql.ts 16   # back to the committed default
+ *   bun run scripts/use-graphql.ts 17     # or: min, 16, or an exact version
+ *   bun run check-types && bun run test
+ *   bun run scripts/use-graphql.ts 16     # back to the committed default
  *
- * Only the library packages are checked against graphql 17 — `example-news-app`
- * depends on graphql-yoga 5, whose peer range still tops out at graphql 16.
+ * The whole workspace runs on every supported version, `example-news-app`
+ * included — graphql-yoga accepts graphql 17 from 5.22.0 onwards.
  */
 import { join, resolve } from 'node:path'
 
-// Versions each major is tested against. Bump when a new release should be
-// covered; `16` doubles as the version committed to the catalog.
+// Shorthands for the versions CI covers. `16` is the version committed to the
+// catalog; `min` is the floor the schema package's peer range declares, and the
+// reason it is 16.4.0 is that `getArgumentValues` became a root export there.
+// Keep these in step with the matrix in .github/workflows/ci.yml.
 const pins: Record<string, string> = {
+  min: '16.4.0',
   '16': '16.13.2',
   '17': '17.0.2',
 }
 
 const requested = process.argv[2]
 if (!requested) {
-  console.error('Usage: bun run scripts/use-graphql.ts <16|17|exact-version>')
+  console.error('Usage: bun run scripts/use-graphql.ts <min|16|17|exact-version>')
   process.exit(1)
 }
 
@@ -36,7 +40,7 @@ const semver =
 
 if (!semver.test(version)) {
   console.error(
-    `Unknown graphql version "${requested}". Known majors: ${Object.keys(pins).join(', ')}`,
+    `Unknown graphql version "${requested}". Known shorthands: ${Object.keys(pins).join(', ')}`,
   )
   process.exit(1)
 }
