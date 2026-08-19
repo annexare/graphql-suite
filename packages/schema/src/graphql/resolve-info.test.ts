@@ -71,6 +71,7 @@ const media = new GraphQLUnionType({
 // ─── Harness ─────────────────────────────────────────────────
 
 let captured: ResolveTree | null = null
+let capturedInfo: GraphQLResolveInfo | null = null
 
 const querySchema = new GraphQLSchema({
   query: new GraphQLObjectType({
@@ -80,6 +81,7 @@ const querySchema = new GraphQLSchema({
         type: node,
         args: { size: { type: GraphQLInt, defaultValue: 3 }, tag: { type: GraphQLString } },
         resolve: (_source, _args, _context, info) => {
+          capturedInfo = info
           captured = parseResolveInfo(info)
           return { id: '1' }
         },
@@ -105,6 +107,7 @@ async function parseInfo(
   variableValues?: Record<string, unknown>,
 ): Promise<ResolveTree | null> {
   captured = null
+  capturedInfo = null
 
   const result = await graphql({ schema: querySchema, source, variableValues })
   expect(result.errors).toBeUndefined()
@@ -349,5 +352,55 @@ describe('parseResolveInfo', () => {
     } as unknown as GraphQLResolveInfo
 
     expect(parseResolveInfo(info)).toBeNull()
+  })
+})
+
+describe('selection walk scaling', () => {
+  /** The `GraphQLResolveInfo` a query produces, captured from a real execution. */
+  const infoFor = async (source: string) => {
+    await parseInfo(source)
+    // biome-ignore lint/style/noNonNullAssertion: the resolver always runs for these queries
+    return capturedInfo!
+  }
+
+  /** Median cost of one `parseResolveInfo` call over `runs` samples. */
+  const median = (info: GraphQLResolveInfo, runs: number) => {
+    const samples: number[] = []
+    for (let i = 0; i < runs; i++) {
+      const t0 = performance.now()
+      parseResolveInfo(info)
+      samples.push(performance.now() - t0)
+    }
+    samples.sort((a, b) => a - b)
+    return samples[Math.floor(samples.length / 2)] ?? 0
+  }
+
+  const queryWith = (count: number) => {
+    const fields = Array.from({ length: count }, (_, i) => `n${i}: name m${i}: id`).join(' ')
+    return `{ root { id ${fields} children { id ${fields} meta { key value } } } }`
+  }
+
+  // Timed against `parseResolveInfo` directly rather than through `graphql()`,
+  // so the fixed cost of parse/validate/execute cannot mask a regression in the
+  // walk itself. A ratio between two input sizes is also independent of how
+  // fast the host is, unlike a wall-clock budget.
+  test('cost grows no worse than linearly with selection size', async () => {
+    const small = median(await infoFor(queryWith(10)), 200)
+    const large = median(await infoFor(queryWith(100)), 200)
+
+    // 10x the selections. Measures ~7x in practice (per-call fixed cost makes
+    // it look slightly sub-linear); a quadratic walk would land near 100x.
+    const ratio = large / Math.max(small, 0.0001)
+    expect(ratio).toBeLessThan(25)
+  })
+
+  test('walks every selection of a large query', async () => {
+    const tree = await parseInfo(queryWith(100))
+
+    // 100 aliases of `name`, 100 of `id`, plus `id` and `children`.
+    expect(keys(tree, 'Node')).toHaveLength(202)
+    expect(Object.keys(fields(tree, 'Node').children?.fieldsByTypeName.Node ?? {})).toHaveLength(
+      202,
+    )
   })
 })
