@@ -142,12 +142,17 @@ only libraries it loads, and both come from your app.
 
 ### graphql 16 or 17
 
-Both majors are supported and both are exercised in CI. Pick whichever your server framework
-supports:
+Both majors are supported, and CI builds, type-checks and tests the whole project against each.
+Pick whichever your server framework supports:
 
-- **graphql 16** — the safe default. Works with graphql-yoga 5, Apollo Server 4, and everything else
-  in the current ecosystem.
-- **graphql 17** — requires **Node 22 or newer**. Adopt it once the rest of your stack accepts it.
+- **graphql 16** — the safe default, accepted everywhere in the current ecosystem.
+- **graphql 17** — requires **Node 22 or newer**, and every other GraphQL library in your app has to
+  accept it too. [graphql-yoga](https://the-guild.dev/graphql/yoga-server) supports graphql 17 from
+  **5.22.0**; on older versions requests carrying variables fail inside Yoga.
+  [graphql-http](https://github.com/graphql/graphql-http) accepts it as well.
+
+Whichever you choose, `buildSchema()` returns a plain `GraphQLSchema`, so the server library is your
+call — this package does not wrap one.
 
 Install exactly one copy. Two copies of `graphql` in a single process fail `instanceof` checks
 against each other, and the schema breaks at query time with errors like

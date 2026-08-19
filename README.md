@@ -44,9 +44,9 @@ Each subpath import has its own peer dependency requirements:
 | `./client` | `drizzle-orm` >=0.44.0 |
 | `./query` | `react` >=18.0.0, `@tanstack/react-query` >=5.0.0 |
 
-`graphql` 16 and 17 are both supported and both run in CI; graphql 17 requires Node 22 or newer.
-Install exactly one copy — two copies of `graphql` in one process fail `instanceof` checks against
-each other.
+`graphql` 16 and 17 are both supported and both run in CI; graphql 17 requires Node 22 or newer and
+a server library that accepts it (`graphql-yoga` >= 5.22.0, or `graphql-http`). Install exactly one
+copy — two copies of `graphql` in one process fail `instanceof` checks against each other.
 
 ## Quick Start
 

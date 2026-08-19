@@ -38,6 +38,7 @@
     "@types/bun": "catalog:",
     "drizzle-orm": "catalog:",
     "graphql": "catalog:",
+    "graphql-http": "catalog:",
     "typescript": "catalog:"
   }
 }

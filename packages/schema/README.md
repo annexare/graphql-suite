@@ -32,9 +32,10 @@ npm install graphql-suite
 | `drizzle-orm` | `>= 0.44.0` |
 | `graphql` | `^16.4.0 \|\| ^17.0.0` |
 
-Both graphql majors are supported and both run in CI. graphql 17 requires Node 22 or newer. This
-package has no runtime dependencies of its own — install exactly one copy of `graphql`, since two
-copies in one process fail `instanceof` checks against each other.
+Both graphql majors are supported and both run in CI. graphql 17 requires Node 22 or newer, and the
+rest of your GraphQL stack has to accept it too — `graphql-yoga` does from **5.22.0**, as does
+`graphql-http`. This package has no runtime dependencies of its own; install exactly one copy of
+`graphql`, since two copies in one process fail `instanceof` checks against each other.
 
 ## Motivation
 

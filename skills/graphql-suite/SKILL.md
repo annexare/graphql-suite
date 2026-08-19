@@ -18,7 +18,7 @@ Three-layer toolkit that turns Drizzle ORM PostgreSQL schemas into fully working
 **Data flow:** Drizzle schema -> `buildSchema()` -> GraphQL server -> `createDrizzleClient()` -> `<GraphQLProvider>` + hooks
 
 **Peer dependencies:**
-- `./schema`: `drizzle-orm` >=0.44.0, `graphql` ^16.4.0 || ^17.0.0 (graphql 17 needs Node 22+)
+- `./schema`: `drizzle-orm` >=0.44.0, `graphql` ^16.4.0 || ^17.0.0 (graphql 17 needs Node 22+, and graphql-yoga >=5.22.0)
 - `./client`: `drizzle-orm` >=0.44.0
 - `./query`: `react` >=18.0.0, `@tanstack/react-query` >=5.0.0
 

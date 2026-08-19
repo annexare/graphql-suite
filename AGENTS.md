@@ -223,8 +223,9 @@ Run the other lane locally before pushing:
 
 ```bash
 bun run scripts/use-graphql.ts 17
-bun run --filter '@graphql-suite/*' check-types && bun run --filter '@graphql-suite/*' test
+bun run check-types && bun run test
 bun run scripts/use-graphql.ts 16   # restore the committed default
 ```
 
-`example-news-app` stays on graphql 16 — graphql-yoga 5 does not accept 17 yet.
+The whole workspace runs on both majors, `example-news-app` included —
+graphql-yoga accepts graphql 17 from 5.22.0 onwards.

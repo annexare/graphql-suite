@@ -28,9 +28,9 @@ jobs:
 
       - run: bun run test
 
-  # `@graphql-suite/schema` supports graphql 16 and 17, so the library packages
-  # are built, typed and tested against both. `example-news-app` stays out of
-  # this lane — graphql-yoga 5 still peers on graphql 16.
+  # Both graphql majors are supported, so the whole workspace — library
+  # packages and the example app — is built, typed and tested against each.
+  # Linting is version-independent and stays in the job above.
   graphql-17:
     runs-on: ubuntu-latest
     steps:
@@ -46,6 +46,6 @@ jobs:
 
       - run: bun run build
 
-      - run: bun run --filter '@graphql-suite/*' check-types
+      - run: bun run check-types
 
-      - run: bun run --filter '@graphql-suite/*' test
+      - run: bun run test
