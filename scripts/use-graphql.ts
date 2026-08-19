@@ -27,9 +27,14 @@ if (!requested) {
 }
 
 const version = pins[requested] ?? requested
-// Anchored, so a typo like "17.0.2x" is rejected rather than written to the
-// catalog for `bun install` to fail on later. Prerelease tags are allowed.
-if (!/^\d+\.\d+\.\d+(-[\w.]+)?$/.test(version)) {
+// The official SemVer pattern, so a typo like "17.0.2x" is rejected rather than
+// written to the catalog for `bun install` to fail on later, while real
+// prerelease and build tags — `17.0.0-rc.0`, `16.1.0-experimental-stream-defer.6`
+// — still go through. https://semver.org/#is-there-a-suggested-regular-expression-regex-to-check-a-semver-string
+const semver =
+  /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$/
+
+if (!semver.test(version)) {
   console.error(
     `Unknown graphql version "${requested}". Known majors: ${Object.keys(pins).join(', ')}`,
   )
