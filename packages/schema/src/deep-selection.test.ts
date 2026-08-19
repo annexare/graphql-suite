@@ -3,7 +3,7 @@ import type { SQL } from 'drizzle-orm'
 import { createTableRelationsHelpers, extractTablesRelationalConfig, relations } from 'drizzle-orm'
 import type { PgDatabase, PgQueryResultHKT } from 'drizzle-orm/pg-core'
 import { integer, json, pgTable, text, uuid } from 'drizzle-orm/pg-core'
-import { graphql } from 'graphql'
+import { graphql, lexicographicSortSchema, parse, printSchema } from 'graphql'
 
 import { buildSchema } from './index'
 import type { BuildSchemaConfig } from './types'
@@ -240,6 +240,33 @@ const relationAt = (...path: string[]) => {
 const columnsAt = (...path: string[]) => Object.keys(relationAt(...path)?.columns ?? {}).sort()
 
 // ─── Tests ───────────────────────────────────────────────────
+
+describe('schema generation stability', () => {
+  // The graphql 17 CI lane runs only the library packages, so the realistic
+  // schema check in `example-news-app` does not cover it. This keeps a
+  // production-shaped schema generating identically on both majors.
+  test('produces a stable set of types', () => {
+    const names = Object.keys(schema.getTypeMap()).filter((n) => !n.startsWith('__'))
+
+    expect(names).toContain('AssetSelectItem')
+    expect(names).toContain('AssetTemplateRelation')
+    expect(names).toContain('AssetSelectedVariantRelation')
+    expect(names).toContain('AssetOverridesRelation')
+    // Depth 5 over eight tables currently expands to ~705 types — the same
+    // order as the real schema this is modelled on. The band catches relation
+    // expansion drifting either way without pinning a number that churns.
+    expect(names.length).toBeGreaterThan(500)
+    expect(names.length).toBeLessThan(1000)
+  })
+
+  test('prints SDL that parses back', () => {
+    const sdl = printSchema(lexicographicSortSchema(schema))
+
+    expect(() => parse(sdl)).not.toThrow()
+    expect(sdl).toContain('type AssetSelectItem')
+    expect(sdl).toContain('scalar JSON')
+  })
+})
 
 describe('deep relation selection', () => {
   test('generates the consumer-style query names', () => {
