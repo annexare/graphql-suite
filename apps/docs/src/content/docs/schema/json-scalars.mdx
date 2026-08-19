@@ -38,6 +38,17 @@ The scalar handles serialization and parsing of JSON values in both directions:
 - **Serialization** — passes the value through as-is (objects, arrays, primitives, null)
 - **Parsing** — accepts any valid JSON value from variables or inline literals
 - **Literal parsing** — recursively parses GraphQL AST literals (objects, arrays, strings, numbers, booleans, null)
+- **Variables inside literals** — a variable used within a JSON literal resolves to its value
+
+That last point means all three of these forms work:
+
+```graphql
+mutation Save($meta: JSON, $tags: JSON) {
+  inline:    insertIntoArticleSingle(values: { title: "A", metadata: { tags: ["x"] } })  { id }
+  whole:     insertIntoArticleSingle(values: { title: "B", metadata: $meta })            { id }
+  embedded:  insertIntoArticleSingle(values: { title: "C", metadata: { tags: $tags } })  { id }
+}
+```
 
 ## Using the scalar in custom schemas
 

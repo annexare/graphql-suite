@@ -1,7 +1,10 @@
 import { describe, expect, test } from 'bun:test'
-import { Kind } from 'graphql'
+import { parseValue } from 'graphql'
 
 import { GraphQLJSON } from './scalars'
+
+/** Builds a real `ValueNode` from GraphQL literal syntax. */
+const literal = (source: string) => parseValue(source)
 
 describe('GraphQLJSON', () => {
   describe('serialize', () => {
@@ -25,58 +28,58 @@ describe('GraphQLJSON', () => {
 
   describe('parseLiteral', () => {
     test('parses STRING kind', () => {
-      expect(GraphQLJSON.parseLiteral({ kind: Kind.STRING, value: 'test' }, {})).toBe('test')
+      expect(GraphQLJSON.parseLiteral(literal('"test"'), {})).toBe('test')
     })
 
     test('parses BOOLEAN kind', () => {
-      expect(GraphQLJSON.parseLiteral({ kind: Kind.BOOLEAN, value: true }, {})).toBe(true)
-      expect(GraphQLJSON.parseLiteral({ kind: Kind.BOOLEAN, value: false }, {})).toBe(false)
+      expect(GraphQLJSON.parseLiteral(literal('true'), {})).toBe(true)
+      expect(GraphQLJSON.parseLiteral(literal('false'), {})).toBe(false)
     })
 
     test('parses INT kind', () => {
-      expect(GraphQLJSON.parseLiteral({ kind: Kind.INT, value: '42' }, {})).toBe(42)
+      expect(GraphQLJSON.parseLiteral(literal('42'), {})).toBe(42)
     })
 
     test('parses FLOAT kind', () => {
-      expect(GraphQLJSON.parseLiteral({ kind: Kind.FLOAT, value: '3.14' }, {})).toBe(3.14)
+      expect(GraphQLJSON.parseLiteral(literal('3.14'), {})).toBe(3.14)
     })
 
     test('parses NULL kind', () => {
-      expect(GraphQLJSON.parseLiteral({ kind: Kind.NULL }, {})).toBeNull()
+      expect(GraphQLJSON.parseLiteral(literal('null'), {})).toBeNull()
     })
 
     test('parses OBJECT kind with nested fields', () => {
-      const ast = {
-        kind: Kind.OBJECT as const,
-        fields: [
-          {
-            kind: Kind.OBJECT_FIELD as const,
-            name: { kind: Kind.NAME as const, value: 'key' },
-            value: { kind: Kind.STRING as const, value: 'val' },
-          },
-          {
-            kind: Kind.OBJECT_FIELD as const,
-            name: { kind: Kind.NAME as const, value: 'num' },
-            value: { kind: Kind.INT as const, value: '10' },
-          },
-        ],
-      }
-      expect(GraphQLJSON.parseLiteral(ast, {})).toEqual({ key: 'val', num: 10 })
+      expect(GraphQLJSON.parseLiteral(literal('{ key: "val", num: 10 }'), {})).toEqual({
+        key: 'val',
+        num: 10,
+      })
     })
 
     test('parses LIST kind with nested values', () => {
-      const ast = {
-        kind: Kind.LIST as const,
-        values: [
-          { kind: Kind.INT as const, value: '1' },
-          { kind: Kind.STRING as const, value: 'two' },
-        ],
-      }
-      expect(GraphQLJSON.parseLiteral(ast, {})).toEqual([1, 'two'])
+      expect(GraphQLJSON.parseLiteral(literal('[1, "two"]'), {})).toEqual([1, 'two'])
     })
 
     test('returns undefined for unknown kind', () => {
-      expect(GraphQLJSON.parseLiteral({ kind: Kind.ENUM, value: 'FOO' }, {})).toBeUndefined()
+      expect(GraphQLJSON.parseLiteral(literal('FOO'), {})).toBeUndefined()
+    })
+
+    test('resolves a variable to its value', () => {
+      expect(GraphQLJSON.parseLiteral(literal('$theme'), { theme: 'dark' })).toBe('dark')
+    })
+
+    test('resolves variables nested inside an object literal', () => {
+      expect(
+        GraphQLJSON.parseLiteral(literal('{ a: 1, b: $nested }'), { nested: { z: 9 } }),
+      ).toEqual({ a: 1, b: { z: 9 } })
+    })
+
+    test('resolves variables nested inside a list literal', () => {
+      expect(GraphQLJSON.parseLiteral(literal('[1, $x]'), { x: 'two' })).toEqual([1, 'two'])
+    })
+
+    test('yields undefined for a variable with no value', () => {
+      expect(GraphQLJSON.parseLiteral(literal('$missing'), {})).toBeUndefined()
+      expect(GraphQLJSON.parseLiteral(literal('$missing'), undefined)).toBeUndefined()
     })
   })
 })

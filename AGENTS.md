@@ -197,8 +197,37 @@ Key files to update per area:
 | Hooks | `row-security.test.ts` | `schema/hooks.mdx` | `patterns/hooks-patterns.md` |
 | Codegen | `codegen.test.ts` | `schema/codegen.mdx` | `references/codegen.md` |
 | Type inference | `infer.test.ts` | `client/type-inference.mdx` | `references/client-api.md` |
+| Resolver execution | `schema-execution.test.ts` | `reference/schema-api.mdx` | `references/schema-api.md` |
+| Resolve-info parsing | `graphql/resolve-info.test.ts` | `reference/schema-api.mdx` | `references/schema-api.md` |
 
 Verify after changes:
 - `bun run test` — all tests pass
 - `bun run check-types` — no type errors
 - `cd apps/docs && bun run build` — docs build
+
+## graphql 16 / 17 compatibility
+
+`@graphql-suite/schema` peers on `graphql ^16.4.0 || ^17.0.0`, and CI runs the whole workspace
+against the three versions that define that range: `16.4.0` (the floor), `16.14.2` (the newest 16)
+and `17.0.2`. Anything touching the `graphql` API has to work across all of them:
+
+- Import only from the `graphql` root — graphql 17 dropped the deep paths (`graphql/execution/values`)
+  that libraries such as `graphql-parse-resolve-info` rely on.
+- Pass `info.variableValues` straight through to `getArgumentValues` / `getDirectiveValues` rather
+  than reading it. Its shape changed in 17 (runtime values moved under `.coerced`).
+- `GraphQLNonNull<T>` requires a nullable `T` in graphql 17. `getNullableType()` narrows a union that
+  might already be wrapped.
+- Custom scalars keep `serialize` / `parseValue` / `parseLiteral` (deprecated in 17, removed in 18).
+  `parseLiteral` takes `(node, variables)` in both.
+
+Run another lane locally before pushing:
+
+```bash
+bun run scripts/use-graphql.ts 17    # or `min` for the 16.4.0 floor
+bun run check-types && bun run test
+bun run scripts/use-graphql.ts 16    # restore the committed default
+```
+
+`example-news-app` is included on every lane — graphql-yoga accepts graphql 17 from 5.22.0 onwards.
+Moving the peer floor means checking the API the parser relies on is present in that release, then
+updating the matrix in `.github/workflows/ci.yml` and the shorthands in `scripts/use-graphql.ts`.

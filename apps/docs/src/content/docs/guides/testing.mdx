@@ -98,6 +98,68 @@ test('fetches articles', async () => {
 })
 ```
 
+### Asserting the query a resolver builds
+
+The resolvers prune columns and derive nested relation arguments from the GraphQL selection, so a
+mock that *records* what it was asked for tests that logic directly — no `graphql-yoga` needed, just
+`graphql()`:
+
+```ts
+import { describe, expect, test } from 'bun:test'
+import { buildSchema } from '@graphql-suite/schema'
+import { createTableRelationsHelpers, extractTablesRelationalConfig } from 'drizzle-orm'
+import { graphql } from 'graphql'
+
+import * as drizzleSchema from './db/schema'
+
+const { tables, tableNamesMap } = extractTablesRelationalConfig(
+  drizzleSchema,
+  createTableRelationsHelpers,
+)
+
+type FindConfig = {
+  columns?: Record<string, true>
+  with?: Record<string, FindConfig>
+  limit?: number
+  offset?: number
+}
+
+let calls: { table: string; config: FindConfig }[] = []
+
+const query = Object.fromEntries(
+  Object.keys(tables).map((name) => [
+    name,
+    {
+      findMany: (config: FindConfig = {}) => {
+        calls.push({ table: name, config })
+        return Promise.resolve([])
+      },
+    },
+  ]),
+)
+
+// biome-ignore lint/suspicious/noExplicitAny: mock db for testing
+const mockDb = { _: { fullSchema: drizzleSchema, schema: tables, tableNamesMap }, query } as any
+const { schema } = buildSchema(mockDb)
+
+test('selects only the requested columns', async () => {
+  calls = []
+  await graphql({ schema, source: '{ article { id title } }' })
+
+  expect(Object.keys(calls[0]?.config.columns ?? {})).toEqual(['id', 'title'])
+})
+
+test('carries relation arguments into the nested query', async () => {
+  calls = []
+  await graphql({ schema, source: '{ article { id comments(limit: 3) { id } } }' })
+
+  expect(calls[0]?.config.with?.comments?.limit).toBe(3)
+})
+```
+
+The same tree is available in your own resolvers via
+[`parseResolveInfo`](/reference/schema-api/#parseresolveinfo).
+
 ## Component tests with linkedom
 
 For testing React components that use the query hooks, set up a DOM environment with `linkedom` and mock the GraphQL client.

@@ -1,0 +1,406 @@
+import { describe, expect, test } from 'bun:test'
+import type { FieldNode, GraphQLResolveInfo, OperationDefinitionNode } from 'graphql'
+import {
+  GraphQLBoolean,
+  GraphQLID,
+  GraphQLInputObjectType,
+  GraphQLInt,
+  GraphQLList,
+  GraphQLNonNull,
+  GraphQLObjectType,
+  GraphQLSchema,
+  GraphQLString,
+  GraphQLUnionType,
+  graphql,
+  parse,
+} from 'graphql'
+
+import { parseResolveInfo, type ResolveTree } from './resolve-info'
+
+// ─── Test Schema ─────────────────────────────────────────────
+
+const filterInput = new GraphQLInputObjectType({
+  name: 'FilterInput',
+  fields: {
+    name: { type: GraphQLString },
+    active: { type: GraphQLBoolean, defaultValue: true },
+  },
+})
+
+const meta: GraphQLObjectType = new GraphQLObjectType({
+  name: 'Meta',
+  fields: () => ({
+    key: { type: GraphQLString },
+    value: { type: GraphQLString },
+  }),
+})
+
+const node: GraphQLObjectType = new GraphQLObjectType({
+  name: 'Node',
+  fields: () => ({
+    id: { type: new GraphQLNonNull(GraphQLID) },
+    name: { type: GraphQLString },
+    meta: { type: meta },
+    children: {
+      type: new GraphQLList(new GraphQLNonNull(node)),
+      args: {
+        limit: { type: GraphQLInt },
+        offset: { type: GraphQLInt, defaultValue: 0 },
+        filter: { type: filterInput },
+      },
+    },
+  }),
+})
+
+const photo = new GraphQLObjectType({
+  name: 'Photo',
+  fields: { url: { type: GraphQLString }, width: { type: GraphQLInt } },
+})
+
+const video = new GraphQLObjectType({
+  name: 'Video',
+  fields: { url: { type: GraphQLString }, duration: { type: GraphQLInt } },
+})
+
+const media = new GraphQLUnionType({
+  name: 'Media',
+  types: [photo, video],
+  resolveType: () => 'Photo',
+})
+
+// ─── Harness ─────────────────────────────────────────────────
+
+let captured: ResolveTree | null = null
+let capturedInfo: GraphQLResolveInfo | null = null
+
+const querySchema = new GraphQLSchema({
+  query: new GraphQLObjectType({
+    name: 'Query',
+    fields: {
+      root: {
+        type: node,
+        args: { size: { type: GraphQLInt, defaultValue: 3 }, tag: { type: GraphQLString } },
+        resolve: (_source, _args, _context, info) => {
+          capturedInfo = info
+          captured = parseResolveInfo(info)
+          return { id: '1' }
+        },
+      },
+      media: {
+        type: media,
+        resolve: (_source, _args, _context, info) => {
+          captured = parseResolveInfo(info)
+          return { url: 'u', width: 1 }
+        },
+      },
+    },
+  }),
+})
+
+/**
+ * Runs `source` against a schema whose root resolvers capture the tree that
+ * `parseResolveInfo` builds, so assertions run against real execution state
+ * rather than a hand-rolled `GraphQLResolveInfo`.
+ */
+async function parseInfo(
+  source: string,
+  variableValues?: Record<string, unknown>,
+): Promise<ResolveTree | null> {
+  captured = null
+  capturedInfo = null
+
+  const result = await graphql({ schema: querySchema, source, variableValues })
+  expect(result.errors).toBeUndefined()
+
+  return captured
+}
+
+/** Sub-selection of a tree node under a given type name. */
+const fields = (tree: ResolveTree | null, typeName: string) =>
+  tree?.fieldsByTypeName[typeName] ?? {}
+
+/** Response keys selected on a type — what the resolver ultimately reads. */
+const keys = (tree: ResolveTree | null, typeName: string) => Object.keys(fields(tree, typeName))
+
+/** Reads a response key by value, so `__proto__` stays a key and not an accessor. */
+const at = <T>(map: Record<string, T>, key: string): T | undefined => map[key]
+
+// ─── Tests ───────────────────────────────────────────────────
+
+describe('parseResolveInfo', () => {
+  test('returns the field currently being resolved', async () => {
+    const tree = await parseInfo('{ root { id } }')
+
+    expect(tree).not.toBeNull()
+    expect(tree?.name).toBe('root')
+    expect(tree?.alias).toBe('root')
+  })
+
+  test('groups sub-selection by the type it was selected on', async () => {
+    const tree = await parseInfo('{ root { id name } }')
+
+    expect(keys(tree, 'Node')).toEqual(['id', 'name'])
+    expect(fields(tree, 'Node').id?.name).toBe('id')
+  })
+
+  test('keys sub-selection by alias while preserving the field name', async () => {
+    const tree = await parseInfo('{ alpha: root { ident: id } }')
+
+    expect(tree?.alias).toBe('alpha')
+    expect(tree?.name).toBe('root')
+
+    const ident = fields(tree, 'Node').ident
+    expect(ident?.alias).toBe('ident')
+    expect(ident?.name).toBe('id')
+  })
+
+  test('two aliases of the same field are kept apart', async () => {
+    const tree = await parseInfo(
+      '{ root { a: children(limit: 1) { id } b: children(limit: 2) { id } } }',
+    )
+
+    expect(keys(tree, 'Node')).toEqual(['a', 'b'])
+    expect(fields(tree, 'Node').a?.args.limit).toBe(1)
+    expect(fields(tree, 'Node').b?.args.limit).toBe(2)
+  })
+
+  // `__proto__` and `constructor` are legal GraphQL aliases. On a plain object
+  // the first rewires the prototype and the second reads back `Object`, so the
+  // selection maps have to be null-prototype.
+  test('treats __proto__ and constructor as ordinary aliases', async () => {
+    const tree = await parseInfo('{ root { __proto__: id constructor: name } }')
+    const selected = fields(tree, 'Node')
+
+    expect(Object.keys(selected)).toEqual(['__proto__', 'constructor'])
+    expect(at(selected, '__proto__')?.name).toBe('id')
+    expect(at(selected, 'constructor')?.name).toBe('name')
+  })
+
+  test('walks the sub-selection of a field aliased __proto__', async () => {
+    const tree = await parseInfo('{ root { __proto__: children { id } } }')
+    const aliased = at(fields(tree, 'Node'), '__proto__')
+
+    expect(aliased?.name).toBe('children')
+    expect(Object.keys(aliased?.fieldsByTypeName.Node ?? {})).toEqual(['id'])
+  })
+
+  test('coerces literal arguments and applies argument defaults', async () => {
+    const tree = await parseInfo('{ root(tag: "x") { children(limit: 5) { id } } }')
+
+    expect(tree?.args).toEqual({ size: 3, tag: 'x' })
+    expect(fields(tree, 'Node').children?.args).toEqual({ offset: 0, limit: 5 })
+  })
+
+  test('resolves variables in nested field arguments', async () => {
+    const tree = await parseInfo(
+      'query ($n: Int, $o: Int) { root { children(limit: $n, offset: $o) { id } } }',
+      { n: 7, o: 14 },
+    )
+
+    expect(fields(tree, 'Node').children?.args).toEqual({ limit: 7, offset: 14 })
+  })
+
+  test('coerces input-object arguments including their field defaults', async () => {
+    const tree = await parseInfo('{ root { children(filter: { name: "n" }) { id } } }')
+
+    expect(fields(tree, 'Node').children?.args.filter).toEqual({ name: 'n', active: true })
+  })
+
+  test('omits arguments that were not supplied and have no default', async () => {
+    const tree = await parseInfo('{ root { children { id } } }')
+
+    expect(fields(tree, 'Node').children?.args).toEqual({ offset: 0 })
+    expect('limit' in (fields(tree, 'Node').children?.args ?? {})).toBe(false)
+  })
+
+  test('walks nested selections to arbitrary depth', async () => {
+    const tree = await parseInfo('{ root { children { children { meta { key } } } } }')
+
+    const level1 = fields(tree, 'Node').children
+    const level2 = level1?.fieldsByTypeName.Node?.children
+    const metaField = level2?.fieldsByTypeName.Node?.meta
+
+    expect(Object.keys(metaField?.fieldsByTypeName.Meta ?? {})).toEqual(['key'])
+  })
+
+  test('inlines fragment spreads under their type condition', async () => {
+    const tree = await parseInfo(`
+      { root { ...NodeFields } }
+      fragment NodeFields on Node { id name }
+    `)
+
+    expect(keys(tree, 'Node')).toEqual(['id', 'name'])
+  })
+
+  test('merges sub-selections of a field spread across fragments', async () => {
+    const tree = await parseInfo(`
+      { root { ...A ...B } }
+      fragment A on Node { children { id } }
+      fragment B on Node { children { name } }
+    `)
+
+    const children = fields(tree, 'Node').children
+    expect(Object.keys(children?.fieldsByTypeName.Node ?? {})).toEqual(['id', 'name'])
+  })
+
+  test('inlines inline fragments without a type condition', async () => {
+    const tree = await parseInfo('{ root { ... { id } name } }')
+
+    expect(keys(tree, 'Node').sort()).toEqual(['id', 'name'])
+  })
+
+  test('groups union members under their own type names', async () => {
+    const tree = await parseInfo(`
+      { media { ... on Photo { url width } ... on Video { duration } } }
+    `)
+
+    expect(keys(tree, 'Photo')).toEqual(['url', 'width'])
+    expect(keys(tree, 'Video')).toEqual(['duration'])
+  })
+
+  test('ignores fragment spreads that name a missing fragment', () => {
+    // Executed documents always carry their fragments, so this branch is only
+    // reachable when `info` is assembled by hand — a stitching layer, say.
+    const document = parse('{ root { id ...Missing } }')
+    const operation = document.definitions[0] as OperationDefinitionNode
+    const rootField = operation.selectionSet.selections[0] as FieldNode
+
+    const info = {
+      fieldNodes: [rootField],
+      parentType: querySchema.getQueryType(),
+      schema: querySchema,
+      fragments: {},
+      variableValues: {},
+    } as unknown as GraphQLResolveInfo
+
+    expect(keys(parseResolveInfo(info), 'Node')).toEqual(['id'])
+  })
+
+  test('drops fields removed by @skip', async () => {
+    const tree = await parseInfo('{ root { id name @skip(if: true) } }')
+
+    expect(keys(tree, 'Node')).toEqual(['id'])
+  })
+
+  test('keeps fields retained by @skip(if: false)', async () => {
+    const tree = await parseInfo('{ root { id name @skip(if: false) } }')
+
+    expect(keys(tree, 'Node')).toEqual(['id', 'name'])
+  })
+
+  test('drops fields removed by @include(if: false)', async () => {
+    const tree = await parseInfo('{ root { id name @include(if: false) } }')
+
+    expect(keys(tree, 'Node')).toEqual(['id'])
+  })
+
+  test('resolves @skip / @include conditions from variables', async () => {
+    const source =
+      'query ($s: Boolean!, $i: Boolean!) { root { id name @skip(if: $s) meta @include(if: $i) { key } } }'
+
+    expect(keys(await parseInfo(source, { s: true, i: false }), 'Node')).toEqual(['id'])
+    expect(keys(await parseInfo(source, { s: false, i: true }), 'Node')).toEqual([
+      'id',
+      'name',
+      'meta',
+    ])
+  })
+
+  test('applies directives on fragment spreads and inline fragments', async () => {
+    const spread = await parseInfo(`
+      { root { id ...A @skip(if: true) } }
+      fragment A on Node { name }
+    `)
+    expect(keys(spread, 'Node')).toEqual(['id'])
+
+    const inline = await parseInfo('{ root { id ... on Node @include(if: false) { name } } }')
+    expect(keys(inline, 'Node')).toEqual(['id'])
+  })
+
+  test('excludes introspection meta-fields', async () => {
+    const tree = await parseInfo('{ root { __typename id } }')
+
+    expect(keys(tree, 'Node')).toEqual(['id'])
+  })
+
+  test('leaves fieldsByTypeName empty for leaf fields', async () => {
+    const tree = await parseInfo('{ root { id } }')
+
+    expect(fields(tree, 'Node').id?.fieldsByTypeName).toEqual({})
+  })
+
+  test('returns null when the field node names nothing in the parent type', () => {
+    const document = parse('{ unknownField }')
+    const operation = document.definitions[0] as OperationDefinitionNode
+    const rootField = operation.selectionSet.selections[0] as FieldNode
+
+    const info = {
+      fieldNodes: [rootField],
+      parentType: querySchema.getQueryType(),
+      schema: querySchema,
+      fragments: {},
+      variableValues: {},
+    } as unknown as GraphQLResolveInfo
+
+    expect(parseResolveInfo(info)).toBeNull()
+  })
+
+  test('returns null when info carries no field nodes', () => {
+    const info = {
+      fieldNodes: [],
+      parentType: { name: 'Query' },
+    } as unknown as GraphQLResolveInfo
+
+    expect(parseResolveInfo(info)).toBeNull()
+  })
+})
+
+describe('selection walk scaling', () => {
+  /** The `GraphQLResolveInfo` a query produces, captured from a real execution. */
+  const infoFor = async (source: string) => {
+    await parseInfo(source)
+    // biome-ignore lint/style/noNonNullAssertion: the resolver always runs for these queries
+    return capturedInfo!
+  }
+
+  /** Median cost of one `parseResolveInfo` call over `runs` samples. */
+  const median = (info: GraphQLResolveInfo, runs: number) => {
+    const samples: number[] = []
+    for (let i = 0; i < runs; i++) {
+      const t0 = performance.now()
+      parseResolveInfo(info)
+      samples.push(performance.now() - t0)
+    }
+    samples.sort((a, b) => a - b)
+    return samples[Math.floor(samples.length / 2)] ?? 0
+  }
+
+  const queryWith = (count: number) => {
+    const fields = Array.from({ length: count }, (_, i) => `n${i}: name m${i}: id`).join(' ')
+    return `{ root { id ${fields} children { id ${fields} meta { key value } } } }`
+  }
+
+  // Timed against `parseResolveInfo` directly rather than through `graphql()`,
+  // so the fixed cost of parse/validate/execute cannot mask a regression in the
+  // walk itself. A ratio between two input sizes is also independent of how
+  // fast the host is, unlike a wall-clock budget.
+  test('cost grows no worse than linearly with selection size', async () => {
+    const small = median(await infoFor(queryWith(10)), 200)
+    const large = median(await infoFor(queryWith(100)), 200)
+
+    // 10x the selections. Measures ~7x in practice (per-call fixed cost makes
+    // it look slightly sub-linear); a quadratic walk would land near 100x.
+    const ratio = large / Math.max(small, 0.0001)
+    expect(ratio).toBeLessThan(25)
+  })
+
+  test('walks every selection of a large query', async () => {
+    const tree = await parseInfo(queryWith(100))
+
+    // 100 aliases of `name`, 100 of `id`, plus `id` and `children`.
+    expect(keys(tree, 'Node')).toHaveLength(202)
+    expect(Object.keys(fields(tree, 'Node').children?.fieldsByTypeName.Node ?? {})).toHaveLength(
+      202,
+    )
+  })
+})
