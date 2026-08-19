@@ -86,7 +86,7 @@ const { schema } = buildSchema(createMockDb())
 const handler = createHandler({ schema })
 
 /** Issues a real HTTP POST against the GraphQL handler. */
-async function post_(body: unknown, headers: Record<string, string> = {}) {
+async function postRequest(body: unknown, headers: Record<string, string> = {}) {
   const response = await handler(
     new Request('http://test/graphql', {
       method: 'POST',
@@ -98,7 +98,8 @@ async function post_(body: unknown, headers: Record<string, string> = {}) {
   return { status: response.status, body: text ? JSON.parse(text) : null }
 }
 
-const gql = (query: string, variables?: Record<string, unknown>) => post_({ query, variables })
+const gql = (query: string, variables?: Record<string, unknown>) =>
+  postRequest({ query, variables })
 
 beforeEach(() => {
   rows = []
@@ -184,7 +185,7 @@ describe('serving the generated schema over HTTP', () => {
   })
 
   test('uses a 400 for a validation error in graphql-response mode', async () => {
-    const { status, body } = await post_(
+    const { status, body } = await postRequest(
       { query: '{ author { nope } }' },
       { accept: 'application/graphql-response+json' },
     )
