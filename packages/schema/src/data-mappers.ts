@@ -1,9 +1,15 @@
-import type { Relation } from 'drizzle-orm'
 import { type Column, getTableColumns, type Table } from 'drizzle-orm'
 import { GraphQLError } from 'graphql'
 
+import {
+  type AnyRelation,
+  getRelationTargetTable,
+  isArrayColumn,
+  normalizeDataType,
+} from './drizzle-compat'
+
 export type TableNamedRelations = {
-  relation: Relation
+  relation: AnyRelation
   targetTableName: string
 }
 
@@ -28,7 +34,7 @@ export const remapToGraphQLCore = (
       return remapToGraphQLArrayOutput(
         value,
         rel.targetTableName,
-        rel.relation.referencedTable,
+        getRelationTargetTable(rel.relation),
         relationMap,
       )
     }
@@ -43,13 +49,13 @@ export const remapToGraphQLCore = (
       return remapToGraphQLSingleOutput(
         value,
         rel.targetTableName,
-        rel.relation.referencedTable,
+        getRelationTargetTable(rel.relation),
         relationMap,
       )
     }
     if (column.columnType === 'PgGeometryObject') return value
 
-    if (column.dataType === 'json') return value
+    if (normalizeDataType(column) === 'json') return value
 
     return JSON.stringify(value)
   }
@@ -98,7 +104,16 @@ export const remapToGraphQLArrayOutput = (
 
 // biome-ignore lint/suspicious/noExplicitAny: dynamic column value
 export const remapFromGraphQLCore = (value: any, column: Column, columnName: string) => {
-  switch (column.dataType) {
+  // On drizzle 1.x an array column reports its *element* dataType, so the
+  // switch below would validate it as a scalar. Check array-ness up front.
+  if (isArrayColumn(column)) {
+    if (!Array.isArray(value)) {
+      throw new GraphQLError(`Field '${columnName}' is not an array!`)
+    }
+    return value
+  }
+
+  switch (normalizeDataType(column)) {
     case 'date': {
       const formatted = new Date(value)
       if (Number.isNaN(formatted.getTime()))
