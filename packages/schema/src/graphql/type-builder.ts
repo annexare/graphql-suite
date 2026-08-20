@@ -1,6 +1,5 @@
 import type { Column } from 'drizzle-orm'
 import { is } from 'drizzle-orm'
-import type { PgArray } from 'drizzle-orm/pg-core'
 import {
   PgBigInt53,
   PgBigSerial53,
@@ -23,6 +22,7 @@ import {
 } from 'graphql'
 
 import { capitalize } from '../case-ops'
+import { getArrayBaseColumn, isArrayColumn, normalizeDataType } from '../drizzle-compat'
 import { GraphQLJSON } from './scalars'
 
 /**
@@ -104,8 +104,25 @@ const columnToGraphQLCore = (
   columnName: string,
   tableName: string,
   isInput: boolean,
+  ignoreArray = false,
 ): ConvertedNullableColumn<boolean> => {
-  switch (column.dataType) {
+  // drizzle 1.x has no array column class: an array is its element column
+  // carrying `dimensions >= 1`, so it must be unwrapped before the dataType
+  // switch (which would otherwise see the element type and emit a bare scalar).
+  // `ignoreArray` stops the element lookup below from recursing forever.
+  if (!ignoreArray && isArrayColumn(column)) {
+    const baseColumn = getArrayBaseColumn(column)
+    if (baseColumn) {
+      const innerType = columnToGraphQLCore(baseColumn, columnName, tableName, isInput, true)
+
+      return {
+        type: new GraphQLList(new GraphQLNonNull(innerType.type as GraphQLScalarType)),
+        description: `Array<${innerType.description}>`,
+      }
+    }
+  }
+
+  switch (normalizeDataType(column)) {
     case 'boolean':
       return { type: GraphQLBoolean, description: 'Boolean' }
     case 'json':
@@ -153,18 +170,7 @@ const columnToGraphQLCore = (
         }
       }
 
-      const innerType = columnToGraphQLCore(
-        // biome-ignore lint/suspicious/noExplicitAny: Drizzle PgArray generic parameters
-        (column as Column as PgArray<any, any>).baseColumn,
-        columnName,
-        tableName,
-        isInput,
-      )
-
-      return {
-        type: new GraphQLList(new GraphQLNonNull(innerType.type as GraphQLScalarType)),
-        description: `Array<${innerType.description}>`,
-      }
+      throw new Error(`GraphQL-Suite Error: Type ${column.dataType} is not implemented!`)
     }
     default:
       throw new Error(`GraphQL-Suite Error: Type ${column.dataType} is not implemented!`)
@@ -181,7 +187,8 @@ export const drizzleColumnToGraphQLType = <TColumn extends Column, TIsInput exte
 ): ConvertedColumn<TIsInput> => {
   const typeDesc = columnToGraphQLCore(column, columnName, tableName, isInput)
   const noDesc = ['string', 'boolean', 'number']
-  if (noDesc.find((e) => e === column.dataType)) delete typeDesc.description
+  if (!isArrayColumn(column) && noDesc.includes(normalizeDataType(column)))
+    delete typeDesc.description
 
   if (forceNullable) return typeDesc as ConvertedColumn<TIsInput>
   if (column.notNull && !(defaultIsNullable && (column.hasDefault || column.defaultFn))) {
