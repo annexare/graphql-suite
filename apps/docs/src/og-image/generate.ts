@@ -190,6 +190,8 @@ export async function generateOgImage(config: OgImageConfig): Promise<Uint8Array
         justifyContent: 'center',
         width: '100%',
         height: '100%',
+        // Newer satori follows the CSS content-box default, which pushes the padding off the canvas
+        boxSizing: 'border-box',
         background: '#f8fafc',
         fontFamily: 'Inter',
         position: 'relative',
