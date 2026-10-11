@@ -35,7 +35,7 @@
     "drizzle-orm": ">=0.44.0"
   },
   "devDependencies": {
-    "@types/bun": "catalog:",
+    "bun-types": "catalog:",
     "drizzle-orm": "catalog:",
     "typescript": "catalog:"
   }

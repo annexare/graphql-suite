@@ -20,7 +20,7 @@ import { join, resolve } from 'node:path'
 // Keep these in step with the matrix in .github/workflows/ci.yml.
 const pins: Record<string, string> = {
   min: '16.4.0',
-  '16': '16.13.2',
+  '16': '16.14.2',
   '17': '17.0.2',
 }
 
