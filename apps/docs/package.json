@@ -12,7 +12,7 @@
   "dependencies": {
     "@astrojs/starlight": "0.42.6",
     "astro": "7.3.8",
-    "satori": "0.47.1",
+    "satori": "0.60.0",
     "satteri": "0.10.5",
     "sharp": "0.35.5"
   },
